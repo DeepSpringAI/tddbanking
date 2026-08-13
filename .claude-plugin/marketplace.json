@@ -1,0 +1,16 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "tddbanking",
+  "description": "Browser-first test banking for Claude Code",
+  "owner": { "name": "DeepSpring", "url": "https://github.com/DeepSpringAI" },
+  "plugins": [
+    {
+      "name": "tddbanking",
+      "description": "Grows a bank of browser-verified user scenarios. Discovers what a real user should be able to do, finds which of it no test covers, implements the gaps in Playwright BDD, and triages every failure into a defect, a flake, or a stale scenario.",
+      "source": "./",
+      "category": "development",
+      "author": { "name": "DeepSpring" },
+      "homepage": "https://github.com/DeepSpringAI/tddbanking"
+    }
+  ]
+}

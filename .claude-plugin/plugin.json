@@ -1,0 +1,9 @@
+{
+  "name": "tddbanking",
+  "description": "Grows a bank of browser-verified user scenarios. Discovers what a real user should be able to do, finds which of it no test covers, implements the gaps in Playwright BDD, and triages every failure into a defect, a flake, or a stale scenario.",
+  "version": "0.1.0",
+  "author": { "name": "DeepSpring", "url": "https://github.com/DeepSpringAI" },
+  "homepage": "https://github.com/DeepSpringAI/tddbanking",
+  "license": "MIT",
+  "keywords": ["playwright", "bdd", "gherkin", "qa", "e2e", "test-coverage", "tdd", "openspec"]
+}
