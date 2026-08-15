@@ -1,46 +1,75 @@
 ---
-description: Find user scenarios the bank does not cover yet and add them as drafts
+description: Turn 1 of 4 - discover every scenario the bank is missing, probe reachability, report coverage
 argument-hint: optional capability or area to focus on
 ---
 
-Grow the bank. Read the `tddbanking` skill for the tag vocabulary and the evidence rule, and
-`${CLAUDE_PLUGIN_ROOT}/skills/tddbanking/writing-scenarios.md` before writing any Gherkin.
+**Turn 1 of the four-turn loop.** Read the `tddbanking` skill first.
 
-Focus: $ARGUMENTS — if empty, cover the whole app.
+This turn finds what should be tested and whether it *can* be tested. It writes no step
+definitions and no application code, and it ends by handing you to turn 2.
 
-1. **Read the existing bank** so you can dedup: every `.feature` file, live and draft. You are
-   looking for behaviors that are absent, not wording that is absent.
-2. **Choose modalities** and dispatch one `scenario-scout` agent per modality, in parallel.
-   Each is blind to the others by design — that is why they find different things.
-   - **app-crawl** — drive the running app. Every route, form, control and error state is a
-     capability a user has. Finds what nobody wrote down. Needs the app running.
-     **Confirm with the user, before dispatching, that the target is disposable and its
-     outbound communication is sandboxed.** Crawling writes: it submits forms, cancels
-     records and triggers whatever the app triggers. Name the URL you are about to crawl and
-     get an explicit yes, or instruct the scout to crawl read-only. This is the one step in
-     the loop that can do real damage, and it is not recoverable by editing a file.
-   - **defect-driven** — past bugs, incidents, hotfix commits. Each becomes a `@regression`
-     draft. Highest value per row in the bank. Sources: issue tracker, `git log` for "fix",
-     support threads. Ask the user where the bugs live if it is not obvious.
-   - **story-driven** — PRDs, tickets, user stories, README claims. Finds intended behavior
-     that may never have been built.
-   Skip a modality when its source does not exist, and say that you skipped it.
-3. **Merge and dedup.** Two scouts finding the same behavior is expected and is a signal, not
-   waste: independent corroboration means the behavior matters. Keep **one** scenario, and
-   **merge the evidence rather than discarding it** — carry every modality's `@from-*` tag
-   onto the survivor, so one row records that the docs promise it, a commit once fixed it,
-   and the crawl observed it. A scenario corroborated three ways is the one to implement
-   first. Drop anything already in the bank.
-4. **Enforce the evidence rule.** Every candidate cites a route, a control, a ticket, a
-   commit, or a document line. Anything without evidence is a guess: drop it and say how many
-   you dropped.
-5. **Present the candidates** grouped by capability, each with its evidence and proposed
-   priority. Ask which to accept. Do not write files before the user answers.
-6. **Write accepted scenarios** as `@draft` into the right `features/<capability>.feature`,
-   creating the file with a `@capability:<slug>` tag if new. Each draft gets its evidence
-   comment and a `@from-*` modality tag.
+Focus: $ARGUMENTS — if empty, cover the whole application.
 
-Write no step definitions here. Drafts are deliberately not executable yet.
+## 1. Preflight
 
-Report: candidates found per modality, accepted, dropped for no evidence, deduped, and the
-new coverage number.
+- Read the existing bank so discovery dedups against it rather than re-finding it:
+  `node ${CLAUDE_PLUGIN_ROOT}/scripts/bank-stats.mjs --json`
+- The application must be running for the crawl and the reachability probe.
+- **Crawl consent.** Name the URL you are about to crawl and confirm with the user that the
+  target is disposable and its outbound communication is sandboxed. Crawling writes: it
+  submits forms, cancels records and triggers whatever the app triggers. Get an explicit yes,
+  or instruct the crawl scout to work read-only. This is the one step in the whole loop that
+  can do irreversible damage.
+
+## 2. Fan out discovery — all in parallel
+
+Cost is not a constraint here; breadth is. Dispatch every applicable agent at once.
+
+- **One `scenario-scout` for app-crawl.** Drives the running app.
+- **One `scenario-scout` for defect-driven.** Mines fixed bugs out of git history and the
+  issue tracker. Expect this to produce the most scenarios and the fewest findings — those
+  bugs are already fixed, so its output is insurance, not detection.
+- **One `promise-extractor` per document class**, run separately rather than as one pass:
+  README and product docs, release notes and changelog, business-rule and spec documents,
+  handoff and plan documents, ADRs, tickets. Skip a class only when it does not exist, and
+  say which you skipped. Splitting these is deliberate: one agent skimming everything reads
+  nothing closely.
+
+Then, as extractions land, dispatch **`promise-auditor`** over the extracted promises — one
+per batch of related promises, in parallel. This is the stage that finds documented behaviour
+that was never built, and it is historically the highest-value output of the whole turn.
+
+## 3. Probe reachability — in parallel, before anything is banked
+
+Dispatch **`reachability-probe`** across the merged candidate set. Each returns `reachable` or
+`blocked` with the specific missing fixture.
+
+Do not skip this to save time. A bank full of scenarios nobody can set up looks like progress
+and is not; discovering it one scenario at a time during turn 2 is the expensive way to learn
+the same thing.
+
+## 4. Merge, dedup, and bank
+
+- Two modalities finding the same behaviour is corroboration, not waste. Keep one scenario and
+  **carry every `@from-*` tag onto the survivor**.
+- Enforce the evidence rule, and **report the numbers**: each scout returns
+  `CONSIDERED / RETURNED / DROPPED`. Sum them per modality and print the drop rate. A drop
+  rate of zero across every modality does not mean the rule is working — it means the rule is
+  not discriminating, and you should say so plainly.
+- Write accepted scenarios as `@draft` into `features/<capability>.feature`, each with its
+  `# evidence:` comment and `@from-*` tag. Reachability-blocked ones additionally get
+  `@blocked` and a `# blocked:` comment naming the missing fixture.
+- Promises that are contradicted or absent get `@gap-suspected`. These are turn 4 material,
+  not turn 2 material — nobody can test a feature that does not exist.
+
+## 5. Report and stop
+
+Print `node ${CLAUDE_PLUGIN_ROOT}/scripts/bank-stats.mjs`, plus the per-modality
+considered/returned/dropped table and the reachability split.
+
+**Do not rank the drafts and do not suggest which to implement first.** Turn 2 implements
+everything reachable; a recommended subset reads as permission to stop early, which is exactly
+how a bank ends up abandoned at 12% coverage.
+
+End the turn by telling the user the next step is `/tddbanking:implement`, and that it will
+take every reachable draft live in one pass.

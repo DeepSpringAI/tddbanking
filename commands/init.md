@@ -46,6 +46,9 @@ and ask rather than guessing a port.
      count as before, plus the bank.
    - `pages/BasePage.ts`, `steps/fixtures.ts`, `steps/example.ts`,
      `features/example.feature`
+   - `steps/fixtures.ts` intentionally registers no page-object fixtures. Steps construct
+     their own Page Objects from `page`, so that turn 2 can implement many capabilities in
+     parallel without every worker editing one shared file.
    - In the config's `webServer` block, replace `command` and `url` with this repo's real dev
      command and port. Without that, CI has nothing to test against. If the bank should run
      against an already-deployed app instead, leave it and set `BANK_BASE_URL`.
@@ -59,7 +62,7 @@ and ask rather than guessing a port.
    the bank is entirely drafts, so generation emits nothing and Playwright exits 1 with
    "No tests found" — CI goes red for the crime of not having implemented anything yet, on
    day one, which is exactly when people decide whether to trust the setup. An empty live
-   suite is a legitimate state; coverage is reported by `/tddbanking:audit`, not by CI going
+   suite is a legitimate state; coverage is reported by `/tddbanking:status`, not by CI going
    red. Drop `--project=bank` **only** when the config has no other projects — otherwise
    `test:bank` drags the repo's existing suite along and the bank's runtime stops meaning
    anything. Translate `npm run` to the detected package manager. Explain to the user, in one
@@ -67,11 +70,21 @@ and ask rather than guessing a port.
 6. **Gitignore** `.features-gen/`, `test-results/`, `playwright-report/`.
 7. **Add CI** from `${CLAUDE_PLUGIN_ROOT}/templates/workflows/bank.yml` to
    `.github/workflows/bank.yml` — skip if a workflow already runs Playwright, and instead
-   tell the user which job to add `test:smoke` to. Adapt `npm ci` and the run commands to the
+   tell the user which job to add `test:smoke` to.
+   **Pushing this file needs `workflow` scope.** A GitHub OAuth token without it has the push
+   rejected outright — `refusing to allow an OAuth App to create or update workflow` — and it
+   rejects the whole branch, not just this file. If that happens, commit it as
+   `ci/bank.yml.example` and tell the user plainly that the gate is off until they move it
+   into `.github/workflows/`. Do not quietly drop it: the workflow is the mechanism that stops
+   the bank rotting, and a bank that only runs locally is the failure this loop prevents. Adapt `npm ci` and the run commands to the
    detected package manager. A bank that does not run on every PR rots; this step is what
    makes the difference, so do not quietly omit it.
-8. **Prove it runs.** Run `test:bank` and confirm the example scenario passes. A scaffold that
+8. **Check coverage reporting works**:
+   `node ${CLAUDE_PLUGIN_ROOT}/scripts/bank-stats.mjs` should report the example scenario.
+   Every later turn reports through that script rather than parsing feature files by hand.
+9. **Prove it runs.** Run `test:bank` and confirm the example scenario passes. A scaffold that
    has never gone green is not a scaffold.
 
-Report: what was installed, the scripts added, and that the next step is
-`/tddbanking:discover`.
+Report: what was installed, the scripts added, and that the next step is turn 1,
+`/tddbanking:discover`. Mention that the loop is four turns and ends at `/tddbanking:file` —
+it does not run continuously.

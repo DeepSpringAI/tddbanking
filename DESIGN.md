@@ -115,3 +115,86 @@ Nothing from exploration is ever committed.
    running the smoke suite, or a check that no scenario's assertion changed in a commit that
    also changed app code — would make the gates mechanical, but they run on other people's
    machines and belong behind an opt-in once the workflow has proven itself.
+
+---
+
+# v0.2.0 — what the first real run changed
+
+v0.1.0 was designed and then trialled. v0.2.0 is what the trial and the first production run
+actually taught, which was mostly that the design was over-reasoned relative to how much it
+had been executed.
+
+## Why four turns, and why no turn ranks its own work
+
+v0.1.0 had six commands and an `audit` that ranked drafts by priority. Used in anger, that
+produced 8 implemented scenarios out of 58 and a strong feeling of completion. The ranking was
+the cause: a shortlist of "what to implement next" reads as sanction to stop after the top few,
+and there is never a natural moment to come back.
+
+So each turn's contract is now completeness — every reachable draft, every failure, every
+finding — and no turn recommends a subset within its own scope. Ranking still exists as
+scheduling inside turn 2, but it is not shown, because showing it is what caused the problem.
+
+The turns end deliberately rather than chaining, so a human sees each result before the next
+begins, and turn 4 is terminal. A loop that restarts itself would rediscover the same gaps
+against unchanged code and produce the same bank.
+
+## Why reachability is probed at discovery
+
+25% of the scenarios attempted in the first run turned out to be unimplementable: no fixture
+could produce their preconditions. Each was discovered separately, expensively, after a Page
+Object and step definitions had already been written.
+
+Nothing in the design asked "can this state be reached?", so the bank accumulated scenarios
+that looked ranked and ready and were not. `reachability-probe` asks it once, in parallel, for
+every candidate, before anything is banked. The `MISSING` field is phrased as a task because
+its reader is either a human seeding a fixture or turn 4 filing the work — and because one
+fixture addition often unblocks several scenarios at once.
+
+The probe is biased toward `reachable` on uncertainty. A wrongly blocked scenario is silently
+dropped from the work list and never revisited; a wrongly reachable one fails loudly in turn 2
+and gets corrected. Prefer the visible failure.
+
+## Why the evidence rule needed instrumentation, not tightening
+
+The rule dropped zero candidates across three modalities, and that number was uninterpretable:
+scouts were told "if you cannot cite evidence, do not return the scenario", so every drop
+happened inside an agent and was never reported. Zero observed drops could not be
+distinguished from a rule doing nothing at all.
+
+Scouts now report `CONSIDERED / RETURNED / DROPPED` with a reason per drop, and "evidence" is
+defined as a verifiable locator — `file:line`, a commit SHA, or a route plus an observed
+control — rather than a gesture at an area. If the drop rate is still zero, that is now a
+finding rather than a silence.
+
+## Why story-driven split in two
+
+It produced the fewest scenarios and found the deepest issue: a booking gate that four
+documents describe and one line of code contradicts. That is a different kind of defect from
+anything a crawl can find, because there is nothing to crawl — the behaviour was never built.
+
+So the modality is now two stages. `promise-extractor` runs once per document class, so nobody
+skims six kinds of document in one pass. `promise-auditor` then checks each promise against
+the code and returns `implemented` / `contradicted` / `absent`, biased toward `contradicted`,
+because a promise wrongly cleared is a gap nobody looks at again.
+
+It deliberately does not resolve disagreements by deciding the documentation is stale. That is
+often true and always a product decision.
+
+## Why coverage is a tested script
+
+The v0.1.0 commands instructed the model to compute coverage by parsing tags. Doing that by
+hand miscounted a real bank — 57 scenarios instead of 58, 6 live instead of 7 — because a
+comment line between a scenario's tag block and its `Scenario:` keyword is legal Gherkin and
+easy to miss.
+
+Coverage is the number the entire model rests on, and it failed silently in the direction of
+looking worse than reality. `scripts/bank-stats.mjs` is now the only place it is computed, with
+a test fixture containing exactly that case.
+
+## Why Page Objects moved into step definitions
+
+A shared `fixtures.ts` registry is a single file that every implementer must edit. With one
+agent per capability running in parallel worktrees, that is a guaranteed conflict on the one
+turn that most needs to fan out. Steps now construct their own Page Objects from `page`. The
+cost is a line per step file; the benefit is fifteen capabilities implemented at once.

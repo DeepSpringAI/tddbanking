@@ -1,44 +1,70 @@
 ---
-description: Turn a draft scenario into a running browser test
-argument-hint: scenario name, capability, or blank for the highest-priority draft
+description: Turn 2 of 4 - take every reachable draft in the bank live
+argument-hint: optional capability to limit to (default is everything)
 ---
 
-Take a `@draft` scenario live. Read the `tddbanking` skill (especially the two modes) and
-`${CLAUDE_PLUGIN_ROOT}/skills/tddbanking/writing-scenarios.md` before writing anything.
+**Turn 2 of the four-turn loop.** Read the `tddbanking` skill and
+`${CLAUDE_PLUGIN_ROOT}/skills/tddbanking/writing-scenarios.md` before writing any test code.
 
-Target: $ARGUMENTS — if empty, pick the highest-priority draft the way `/tddbanking:audit`
-ranks them, and announce which you picked and why.
+**The contract of this turn is completeness.** Every implementable draft goes live, or the
+turn has failed and you say so. There is no "the most important ones". Partial implementation
+is the failure mode this structure exists to prevent.
 
-One scenario per cycle. Never batch-implement drafts: each result changes what you learn
-about the app, and a batch hides which scenario found what.
+Scope: $ARGUMENTS — if empty, the whole bank.
 
-1. **Read the scenario and its evidence comment.** The evidence tells you where in the app to
-   look.
-2. **Explore the surface** it touches. Use the `webapp-testing` skill for throwaway
-   reconnaissance — screenshots, DOM inspection, finding real locators. Nothing from that
-   exploration gets committed; it exists to tell you what the Page Object should contain.
-3. **Write or extend the Page Object** in `pages/`. Every locator lives here, and prefer
-   `getByRole` / `getByLabel` / `getByText` over CSS.
-4. **Write the step definitions** in `steps/`. Reuse existing steps before adding new ones —
-   search first. Steps contain no locators.
-5. **Remove the `@draft` tag** and run the scenario through the `browser-runner` agent so
-   traces and screenshots stay out of this context.
-6. **Route the outcome honestly** — this is the whole point of the command:
-   - **Green** → backfill succeeded. The behavior works and is now guarded. Coverage gained.
-     This is a success; do not manufacture a red first.
-   - **Red** → hand the failure to the `failure-triager` agent. Then:
-     - `defect` → **the bank found a bug.** Leave the scenario live and failing, or tag it
-       `@known-defect` plus `@defect-change:<name>` once `/tddbanking:file` has created the change, so the gate
-       stays usable for unrelated work while the full run keeps the failure visible. Record
-       the finding for `/tddbanking:file`. Do not fix the app here, and never apply the tag
-       without a change to point it at — an untagged owner is how a defect becomes furniture.
-     - `flake` → fix the test and re-run. The scenario is not live until it is stable.
-     - `stale` → the draft described the wrong behavior. Correct it, say why, re-run.
+## 1. Establish the work list
 
-**Never edit a scenario's assertion to match what the app does.** That converts a discovered
-defect into permanent blindness, and it is the one failure this whole system exists to
-prevent. If the scenario is genuinely wrong, say so explicitly and cite the intentional
-change that made it wrong.
+```
+node ${CLAUDE_PLUGIN_ROOT}/scripts/bank-stats.mjs --json
+```
 
-Report: which scenario went live, the outcome, any finding produced, and the capability's new
-coverage.
+The work list is every scenario that is `@draft`, **not** `@blocked`, and **not**
+`@gap-suspected` — the `implementable` count. Print that number. It is what you are
+accountable for at the end of the turn.
+
+If it is zero, say so and hand to turn 3.
+
+## 2. Fan out by capability, one worktree each
+
+Dispatch one **`capability-implementer`** agent per capability with implementable drafts, all
+at once, each with `isolation: "worktree"`. They write code, so they need isolation or they
+will clobber one another.
+
+Give each agent: its capability, the scenarios it owns, the app's base URL and start command,
+and the existing Page Object and step conventions.
+
+**Page Objects are constructed inside step definitions, not registered in a shared fixtures
+file.** A shared fixture registry is a single file every parallel worker must edit, and it
+turns every merge into a conflict. `steps/fixtures.ts` holds only `createBdd(test)`.
+
+## 3. Merge
+
+Bring each worktree's work back in turn. Conflicts should be rare by construction; where two
+capabilities genuinely need the same Page Object, keep one and have both step files construct
+it. Run `npx bddgen --tags "not @draft"` after each merge so a broken step signature surfaces
+against the capability that caused it rather than at the end.
+
+## 4. Record outcomes honestly
+
+Each scenario ends in exactly one state, and the routing matters more than the count:
+
+- **green** — backfill succeeded. The behaviour works and is now guarded. This is a success,
+  not a TDD violation; you are documenting reality, not driving it.
+- **red** — leave it live and failing. **Do not triage here and do not fix the application.**
+  Turn 3 owns triage; guessing at it now produces unverified findings.
+- **blocked** — the scenario turned out to need a fixture that does not exist. Revert it to
+  `@draft`, add `@blocked` and a `# blocked:` comment naming exactly what is missing, and
+  count it. Do not manufacture the state by driving the interface through a long setup path:
+  that tests the setup more than the behaviour, and it is slow and brittle forever after.
+
+**Never edit a scenario's assertion to match what the application does.** That converts a
+discovered defect into permanent blindness, and it is the single thing this whole system
+exists to prevent.
+
+## 5. Report and stop
+
+Print `node ${CLAUDE_PLUGIN_ROOT}/scripts/bank-stats.mjs` and state plainly: implementable at
+the start, live at the end, and newly blocked. If those do not reconcile, say which scenarios
+are unaccounted for.
+
+End by telling the user the next step is `/tddbanking:verify`.
