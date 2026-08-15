@@ -53,7 +53,7 @@ On a `Scenario`:
 | `@from-crawl` `@from-bug:<id>` `@from-story:<id>` | Which discovery modality found it. |
 | `@known-defect` + `@defect-change:<name>` | The bank proved a real bug and it is being fixed under that change. Excluded from the `@smoke` gate so it does not block unrelated work, but kept in the full run — the day it goes green is the day the fix landed. Never use it to silence a failure nobody is fixing. |
 | `@blocked` + a `# blocked:` comment | The scenario's preconditions cannot be produced from any fixture. Excluded from turn 2's work list; turn 4 files the missing fixture as work. The comment names the fixture as a task, not "needs more data". |
-| `@gap-suspected` | The behavior was promised somewhere but appears unbuilt. Not merely untested — implementing it needs development first, so it routes to `/tddbanking:file`, not `/tddbanking:implement`. |
+| `@gap-suspected` | The behavior was promised somewhere but appears unbuilt. Route it to `/tddbanking:file`. **But if it is also reachable, implement it anyway** — a failing test proves the gap far better than a document comparison, and turns a suspicion into a finding. Only an unreachable one is excluded from turn 2. |
 | `@from-backend:<path>` | Reserved: a backend test asserting the same behavior. |
 
 **A tag you filter on must be bare.** Cucumber tag expressions match whole tags, so

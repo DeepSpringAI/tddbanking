@@ -49,6 +49,10 @@ and ask rather than guessing a port.
    - `steps/fixtures.ts` intentionally registers no page-object fixtures. Steps construct
      their own Page Objects from `page`, so that turn 2 can implement many capabilities in
      parallel without every worker editing one shared file.
+   - **On an existing bank this is a migration, not a template swap.** Every step file that
+     destructures a page-object fixture must be converted in the same change. A step asking for
+     a fixture that no longer exists aborts collection for the *entire* bank — every scenario
+     errors, not just that one — so a half-done conversion looks like total failure.
    - In the config's `webServer` block, replace `command` and `url` with this repo's real dev
      command and port. Without that, CI has nothing to test against. If the bank should run
      against an already-deployed app instead, leave it and set `BANK_BASE_URL`.

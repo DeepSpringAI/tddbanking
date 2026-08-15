@@ -95,8 +95,11 @@ export function summarise(scenarios) {
   }
   const live = scenarios.filter((s) => !isDraft(s));
   const blocked = scenarios.filter(isBlocked);
-  // Reachable drafts are what turn 2 is contractually required to implement.
-  const implementable = scenarios.filter((s) => isDraft(s) && !isBlocked(s) && !has(s, '@gap-suspected'));
+  // Reachable drafts are what turn 2 is contractually required to implement. A
+  // @gap-suspected scenario still counts when it is reachable: implementing it produces a
+  // failing test that proves the gap, which beats a document comparison. Only an unreachable
+  // one is out of scope.
+  const implementable = scenarios.filter((s) => isDraft(s) && !isBlocked(s));
   return {
     total: scenarios.length,
     live: live.length,
