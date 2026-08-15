@@ -33,16 +33,41 @@ will clobber one another.
 Give each agent: its capability, the scenarios it owns, the app's base URL and start command,
 and the existing Page Object and step conventions.
 
+**A worktree isolates files, not the running application.** Implementers have to run their
+scenarios, and a shared app instance means they reset and mutate each other's state — which
+surfaces as failures that belong to no one. Give each agent **its own app instance on its own
+port**, and say so explicitly: many apps hardcode a port or a proxy target, so the agent may
+need to patch its worktree's config (that patch is local scaffolding and must not be
+committed). If per-instance ports are genuinely impossible, run the implementers serially
+rather than pretending otherwise.
+
+Tell each agent to **stop only its own processes, by PID**. A broad `pkill -f <server>` in one
+worktree kills every sibling's app, and the resulting burst of connection failures looks like
+real test failures. This happened repeatedly in the first production run.
+
 **Page Objects are constructed inside step definitions, not registered in a shared fixtures
 file.** A shared fixture registry is a single file every parallel worker must edit, and it
 turns every merge into a conflict. `steps/fixtures.ts` holds only `createBdd(test)`.
 
 ## 3. Merge
 
-Bring each worktree's work back in turn. Conflicts should be rare by construction; where two
-capabilities genuinely need the same Page Object, keep one and have both step files construct
-it. Run `npx bddgen --tags "not @draft"` after each merge so a broken step signature surfaces
-against the capability that caused it rather than at the end.
+Bring each worktree's work back in turn. File conflicts should be rare by construction; where
+two capabilities genuinely need the same Page Object, keep one and have both step files
+construct it.
+
+**Run `npx bddgen --tags "not @draft"` after every merge, not just at the end.** It is the only
+check for the two failures that worktrees do not prevent:
+
+- **Colliding step text.** Two implementers cannot see each other's steps, so both may define
+  `Then the upload is refused` for different artefacts. Generation refuses the ambiguity;
+  rename each to name its artefact, in both the step and the scenario.
+- **Broken merges of additive conflicts.** When two agents add different methods to one class,
+  "keep both sides" is usually right — but if a hunk boundary falls inside a method, the
+  resolution silently loses a brace. Generation catches it; a file-level conflict check does
+  not.
+
+If the merged bank does not generate, nothing runs at all: a single unknown fixture or
+ambiguous step aborts collection for every scenario, not just the one at fault.
 
 ## 4. Record outcomes honestly
 

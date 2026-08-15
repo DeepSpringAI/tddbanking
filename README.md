@@ -202,7 +202,7 @@ See [DESIGN.md](DESIGN.md) for the reasoning behind the model.
 
 ## Status
 
-v0.2.0. The loop is prompt-level guidance — no hooks run on your machine.
+v0.2.1. The loop is prompt-level guidance — no hooks run on your machine.
 
 ### What has been verified
 
@@ -227,10 +227,25 @@ Also verified: 13 tests covering the coverage parser, `plugin validate` and
 `plugin tag --dry-run` clean, a pristine clone installing and registering 6 commands and
 7 agents, and the installed copy reporting a real 58-scenario bank correctly.
 
-**Not yet verified: the four-turn loop end-to-end.** The turn structure, `capability-implementer`,
-the parallel worktree fan-out and the sharded verify have not been run as a complete cycle
-against a real repository. The pieces are tested; the assembly is not. If you adopt this
-before that happens, expect the seams between turns to be where it breaks.
+**v0.2.1's four-turn loop has now been run end-to-end** against that same application, in one
+sitting:
+
+- **Turn 1** probed all 51 drafts in parallel: 45 reachable, 6 blocked. It also corrected 13
+  scenarios pointed at unusable fixtures, caught one that would have passed vacuously, found a
+  missing reset hook, and overturned one of the human's own annotations.
+- **Turn 2** ran six implementers at once, each in its own worktree with its own app instance.
+  Coverage went **12% → 90%**. Five of six branches merged with no conflicts at all.
+- **Turn 3** ran the full bank: 52 passed, 6 failed in 6.4 minutes, every failure triaged as a
+  defect with a code citation.
+- **Turn 4** filed six OpenSpec changes, all passing `openspec validate --strict`.
+
+Six real defects, three of them new — including a pharma disclosure report naming doctors who
+declined consent.
+
+Everything in v0.2.1 exists because that run broke without it: parallel implementers contending
+over one app instance and killing each other's servers, two implementers defining the same step
+text, and a fixture-registry removal that turned out to be a migration rather than a template
+swap.
 
 ## License
 

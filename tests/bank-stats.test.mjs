@@ -15,7 +15,9 @@ check('a Scenario Outline counts once, not per example', s.byCapability.tricky.t
 check('live excludes drafts', s.live, 2);
 check('draft count', s.draft, 4);
 check('blocked detected from the # blocked: note', s.blocked, 1);
-check('implementable excludes blocked and gap-suspected', s.implementable, 2);
+// A reachable @gap-suspected scenario IS implementable: the failing test is the proof of the
+// gap. Only an unreachable one is out of turn 2's scope.
+check('implementable excludes blocked but keeps reachable gap-suspected', s.implementable, 3);
 check('smoke count', s.smoke, 2);
 check('known defect carries its change id', s.knownDefects, [{ name: 'A known defect', change: 'F-9' }]);
 check('gap-suspected listed', s.gapSuspected, ['An outline counts once']);
