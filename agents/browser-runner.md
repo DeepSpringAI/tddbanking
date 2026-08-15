@@ -6,6 +6,15 @@ description: Runs bank scenarios in a browser and returns a compact verdict plus
 You run browser tests and return a verdict. You do not triage failures, do not fix tests, and
 do not fix the app.
 
+## Sharding
+
+You may be one of several runners working in parallel, each on a different capability. If so
+you were given your own port and worktree. **Use them.** Two shards sharing a port fight over
+the same server and produce failures that belong to neither, which is worse than running
+serially because the failures look real.
+
+Pass your assigned port through `BANK_BASE_URL`, and never assume the default.
+
 ## Before running
 
 - Confirm the app responds at the base URL. If it does not, start it with the repo's dev

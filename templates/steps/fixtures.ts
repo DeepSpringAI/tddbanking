@@ -1,19 +1,18 @@
 import { test as base, createBdd } from 'playwright-bdd';
 
 /**
- * One fixture per Page Object. Step definitions receive them by name, which is what
- * keeps steps thin:
+ * Deliberately empty of page-object fixtures.
  *
- *   When('I transfer {int} EUR to {string}', async ({ transfersPage }, amount, to) => {
- *     await transfersPage.transfer(amount, to);
+ * Step definitions construct their own Page Objects from `page`:
+ *
+ *   When('I transfer {int} EUR to {string}', async ({ page }, amount, to) => {
+ *     await new TransfersPage(page).transfer(amount, to);
  *   });
+ *
+ * A shared fixture registry is a single file every parallel implementer would have to edit,
+ * which turns every merge into a conflict and serialises the one step that most needs to fan
+ * out. Keep this file boring.
  */
-type BankFixtures = {
-  // transfersPage: TransfersPage;
-};
-
-export const test = base.extend<BankFixtures>({
-  // transfersPage: async ({ page }, use) => { await use(new TransfersPage(page)); },
-});
+export const test = base;
 
 export const { Given, When, Then, Before, After } = createBdd(test);

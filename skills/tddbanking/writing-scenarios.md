@@ -42,11 +42,15 @@ the scenario.
 Step definitions translate a sentence into an intent. They contain no locators.
 
 ```ts
-// steps/transfers.ts — thin.
-When('I transfer {int} EUR to {string}', async ({ transfersPage }, amount, recipient) => {
-  await transfersPage.transfer(amount, recipient);
+// steps/transfers.ts — thin, and it builds its own page object.
+When('I transfer {int} EUR to {string}', async ({ page }, amount, recipient) => {
+  await new TransfersPage(page).transfer(amount, recipient);
 });
 ```
+
+Constructing the Page Object here rather than registering it as a shared fixture is what lets
+capabilities be implemented in parallel: `steps/fixtures.ts` stays a file nobody has to edit,
+so nobody conflicts over it.
 
 ```ts
 // pages/TransfersPage.ts — every selector lives here.
