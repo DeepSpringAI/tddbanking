@@ -70,7 +70,13 @@ and ask rather than guessing a port.
 6. **Gitignore** `.features-gen/`, `test-results/`, `playwright-report/`.
 7. **Add CI** from `${CLAUDE_PLUGIN_ROOT}/templates/workflows/bank.yml` to
    `.github/workflows/bank.yml` — skip if a workflow already runs Playwright, and instead
-   tell the user which job to add `test:smoke` to. Adapt `npm ci` and the run commands to the
+   tell the user which job to add `test:smoke` to.
+   **Pushing this file needs `workflow` scope.** A GitHub OAuth token without it has the push
+   rejected outright — `refusing to allow an OAuth App to create or update workflow` — and it
+   rejects the whole branch, not just this file. If that happens, commit it as
+   `ci/bank.yml.example` and tell the user plainly that the gate is off until they move it
+   into `.github/workflows/`. Do not quietly drop it: the workflow is the mechanism that stops
+   the bank rotting, and a bank that only runs locally is the failure this loop prevents. Adapt `npm ci` and the run commands to the
    detected package manager. A bank that does not run on every PR rots; this step is what
    makes the difference, so do not quietly omit it.
 8. **Check coverage reporting works**:

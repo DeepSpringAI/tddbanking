@@ -90,6 +90,20 @@ the spec is preserved.
 Note that `bddgen` validates step signatures: a `{string}` in the text with no matching
 function argument fails generation with an arity error rather than at runtime.
 
+## Let articles alternate
+
+English forces `a Medical Rep` but `an Event Manager`, and Gherkin matches literally — so one
+step definition silently becomes two. Cucumber expressions support alternation, so write the
+step once:
+
+```ts
+Given('I am working as a/an {string}', async ({ page }, role) => { ... });
+```
+
+The same applies to any word the sentence inflects: `is/are`, `it/they`. Catching this at the
+step definition is much cheaper than meeting it as a "missing step definition" error after the
+scenario is already written.
+
 ## Reuse steps before writing new ones
 
 Search the existing step definitions first. Duplicate steps with slightly different wording
