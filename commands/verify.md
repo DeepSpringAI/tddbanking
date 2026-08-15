@@ -1,6 +1,6 @@
 ---
 description: Run the live bank against the app and triage every failure
-argument-hint: "smoke" (default), "full", or a capability
+argument-hint: smoke (default), full, or a capability name
 ---
 
 Run the bank and turn its output into decisions. Read `${CLAUDE_PLUGIN_ROOT}/skills/tddbanking/triage.md` before
