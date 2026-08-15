@@ -72,6 +72,20 @@ changes, exactly one file should need editing.
 experience breaks, which is the only time a browser test should break. A `.css-1x9dfk2`
 selector fails on a style refactor that no user would notice.
 
+## Quote the data, not the prose
+
+Values a step should parameterize go in quotes. `Given I am working as a "Compliance Officer"`
+generates one reusable step; `Given I am working as a Compliance Officer` generates a
+single-purpose step, and you will write a near-duplicate for every role.
+
+Quote roles, names, identifiers and amounts. Leave the surrounding sentence unquoted. Drafts
+written by discovery often miss this — it is a normal and expected correction when taking a
+scenario live, and it does not change the behavior the scenario asserts, so traceability to
+the spec is preserved.
+
+Note that `bddgen` validates step signatures: a `{string}` in the text with no matching
+function argument fails generation with an arity error rather than at runtime.
+
 ## Reuse steps before writing new ones
 
 Search the existing step definitions first. Duplicate steps with slightly different wording

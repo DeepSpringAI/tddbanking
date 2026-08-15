@@ -52,10 +52,15 @@ and ask rather than guessing a port.
 5. **Add scripts** to `package.json`, exactly these — the tag filter is not optional:
    ```json
    "bdd:gen":    "bddgen --tags \"not @draft\"",
-   "test:bank":  "npm run bdd:gen && playwright test --project=bank",
-   "test:smoke": "bddgen --tags \"@smoke and not @draft\" && playwright test --project=bank"
+   "test:bank":  "npm run bdd:gen && playwright test --project=bank --pass-with-no-tests",
+   "test:smoke": "bddgen --tags \"@smoke and not @draft\" && playwright test --project=bank --pass-with-no-tests"
    ```
-   Drop `--project=bank` **only** when the config has no other projects — otherwise
+   `--pass-with-no-tests` matters more than it looks. Straight after `/tddbanking:discover`
+   the bank is entirely drafts, so generation emits nothing and Playwright exits 1 with
+   "No tests found" — CI goes red for the crime of not having implemented anything yet, on
+   day one, which is exactly when people decide whether to trust the setup. An empty live
+   suite is a legitimate state; coverage is reported by `/tddbanking:audit`, not by CI going
+   red. Drop `--project=bank` **only** when the config has no other projects — otherwise
    `test:bank` drags the repo's existing suite along and the bank's runtime stops meaning
    anything. Translate `npm run` to the detected package manager. Explain to the user, in one
    line, that calling `bddgen` bare will fail on drafts by design.

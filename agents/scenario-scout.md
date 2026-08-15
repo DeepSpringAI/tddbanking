@@ -14,7 +14,23 @@ one behavior each, no UI mechanics.
 You are told which one. Do only that one — the value of running scouts in parallel comes from
 each being blind to the others.
 
-**app-crawl** — drive the running app with the `webapp-testing` skill. Enumerate routes,
+**app-crawl** — drive the running app with the `webapp-testing` skill.
+
+> **Crawling writes.** Discovering what a user can do means doing it: this modality will
+> submit forms, cancel records and trigger whatever the app triggers. Before you touch a
+> control that changes state, confirm all three:
+> 1. the target is a **disposable instance** — local, seeded, throwaway database. Never
+>    production, never a shared staging environment, never anything with real records in it;
+> 2. **outbound communication is sandboxed** — email, SMS, webhooks, payments. If you cannot
+>    confirm that, do not activate any control that sends, charges, or notifies;
+> 3. the data is **fake**. Real people's records are not crawl fixtures.
+>
+> If any of the three is unconfirmed, crawl read-only: enumerate routes, forms, controls and
+> validation from the rendered DOM, and write scenarios for the state changes you did not
+> perform, marking their evidence as observed-but-not-executed. Say plainly in your result
+> that you crawled read-only and why. A smaller set of candidates is a fine outcome; an email
+> sent to a real doctor is not.
+ Enumerate routes,
 forms, controls, empty states, error states, permission boundaries. For each, ask what a user
 is trying to accomplish, and what should happen when they do it wrong. Pay attention to what
 has no obvious test: destructive actions, concurrent submissions, session expiry, pagination
@@ -67,6 +83,10 @@ Scenario: Submitting a transfer twice does not send the money twice
   Then only one transfer is recorded
   And my balance decreases by 50 EUR
 ```
+
+Quote every value a step should parameterize — roles, names, identifiers, amounts —
+so the scenario generates reusable steps rather than single-purpose ones. Write
+`as a "Compliance Officer"`, not `as a Compliance Officer`.
 
 Then one final line: `FOUND: <n> candidates across <m> capabilities`.
 
