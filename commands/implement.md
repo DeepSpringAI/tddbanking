@@ -4,7 +4,7 @@ argument-hint: scenario name, capability, or blank for the highest-priority draf
 ---
 
 Take a `@draft` scenario live. Read the `tddbanking` skill (especially the two modes) and
-`skills/tddbanking/writing-scenarios.md` before writing anything.
+`${CLAUDE_PLUGIN_ROOT}/skills/tddbanking/writing-scenarios.md` before writing anything.
 
 Target: $ARGUMENTS — if empty, pick the highest-priority draft the way `/tddbanking:audit`
 ranks them, and announce which you picked and why.

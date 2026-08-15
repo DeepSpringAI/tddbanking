@@ -4,7 +4,7 @@ argument-hint: optional capability or area to focus on
 ---
 
 Grow the bank. Read the `tddbanking` skill for the tag vocabulary and the evidence rule, and
-`skills/tddbanking/writing-scenarios.md` before writing any Gherkin.
+`${CLAUDE_PLUGIN_ROOT}/skills/tddbanking/writing-scenarios.md` before writing any Gherkin.
 
 Focus: $ARGUMENTS — if empty, cover the whole app.
 

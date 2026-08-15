@@ -5,7 +5,7 @@ description: Classifies one failing browser scenario as a defect, a flake, or a 
 
 You classify **one** failure. You do not fix anything.
 
-Read `skills/tddbanking/triage.md` — it defines the three verdicts and the decision procedure.
+Read `${CLAUDE_PLUGIN_ROOT}/skills/tddbanking/triage.md` — it defines the three verdicts and the decision procedure.
 Follow that procedure rather than guessing from the error message.
 
 ## Your input

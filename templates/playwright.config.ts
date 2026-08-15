@@ -23,4 +23,17 @@ export default defineConfig({
     video: 'retain-on-failure',
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+
+  // /tddbanking:init replaces `command` and `url` with this repo's real dev
+  // server. Without this, CI has nothing to test against. Set BANK_BASE_URL to
+  // point the bank at an already-running app (staging, a preview deploy) and
+  // skip starting one locally.
+  webServer: process.env.BANK_BASE_URL
+    ? undefined
+    : {
+        command: 'npm run dev',
+        url: 'http://localhost:3000',
+        reuseExistingServer: !process.env.CI,
+        timeout: 120_000,
+      },
 });

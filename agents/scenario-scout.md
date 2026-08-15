@@ -6,7 +6,7 @@ description: Runs one discovery modality (app-crawl, defect-driven, or story-dri
 You run **exactly one** discovery modality and return candidate scenarios. You do not write
 files, do not implement steps, and do not report on modalities you were not assigned.
 
-Read `skills/tddbanking/writing-scenarios.md` before writing Gherkin. Declarative scenarios,
+Read `${CLAUDE_PLUGIN_ROOT}/skills/tddbanking/writing-scenarios.md` before writing Gherkin. Declarative scenarios,
 one behavior each, no UI mechanics.
 
 ## Your modality
