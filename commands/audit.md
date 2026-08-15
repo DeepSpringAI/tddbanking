@@ -19,7 +19,11 @@ Parse every `.feature` file and compute from tags alone — never from a stored 
    are candidates for `/tddbanking:file`. Reporting them among ordinary drafts sends someone
    to write a test for a feature that does not exist.
 4. **Health problems**, each with the specific scenario named:
-   - `@quarantine:<date>` past its deadline — this is debt, report it as such
+   - `@quarantine-until:<date>` past its deadline — this is debt, report it as such
+   - `@known-defect` scenarios, with the `@defect-change:` name and whether that change is
+     still open. One that now passes means the fix landed: drop the tag. One whose change was
+     archived while it still fails is the worst state in the bank — a proven bug everyone has
+     stopped looking at
    - duplicate scenarios asserting the same behavior in different words
    - drafts with no evidence comment (they should not exist; they got in somehow)
    - capabilities with zero `@smoke` coverage — nothing gates them on a PR

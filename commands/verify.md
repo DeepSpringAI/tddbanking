@@ -17,8 +17,8 @@ capability's scenarios.
 3. **Triage every failure** via the `failure-triager` agent, one per failure, in parallel.
    Each returns `defect` / `flake` / `stale` with its reasoning.
 4. **Apply the triage**:
-   - `flake` → fix now if it is quick; otherwise tag `@quarantine:<date>` with a real
-     deadline and name an owner. Never quarantine silently to make CI green.
+   - `flake` → fix now if it is quick; otherwise tag `@quarantine` plus
+     `@quarantine-until:<date>` with a real deadline, and name an owner. Never quarantine silently to make CI green.
    - `stale` → correct the scenario, stating the intentional change that made it stale.
    - `defect` → collect as a finding. Do not fix the app here.
 5. **Report** as a table: scenario, verdict, evidence path. Then the counts.

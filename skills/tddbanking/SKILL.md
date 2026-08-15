@@ -48,11 +48,18 @@ On a `Scenario`:
 | `@draft` | Aspirational. Excluded from generation. Removing it is how a scenario goes live. |
 | `@smoke` | Must always be green. The tier that gates a merge. |
 | `@regression` | Guards a bug that already happened once. |
-| `@quarantine:<YYYY-MM-DD>` | Known flaky, excluded from gating, must be fixed or deleted by that date. |
+| `@quarantine` + `@quarantine-until:<YYYY-MM-DD>` | Known flaky. The bare tag is what the gate filters on; the companion carries the deadline. Must be fixed or deleted by that date. |
 | `@priority:high\|medium\|low` | Drives what `/tddbanking:implement` picks next. |
 | `@from-crawl` `@from-bug:<id>` `@from-story:<id>` | Which discovery modality found it. |
+| `@known-defect` + `@defect-change:<name>` | The bank proved a real bug and it is being fixed under that change. Excluded from the `@smoke` gate so it does not block unrelated work, but kept in the full run — the day it goes green is the day the fix landed. Never use it to silence a failure nobody is fixing. |
 | `@gap-suspected` | The behavior was promised somewhere but appears unbuilt. Not merely untested — implementing it needs development first, so it routes to `/tddbanking:file`, not `/tddbanking:implement`. |
 | `@from-backend:<path>` | Reserved: a backend test asserting the same behavior. |
+
+**A tag you filter on must be bare.** Cucumber tag expressions match whole tags, so
+`not @quarantine` does **not** match `@quarantine:2026-09-01` — the filter silently does
+nothing and the scenario runs anyway. Anything the gate excludes therefore comes in pairs: a
+bare tag to filter on, and a companion tag carrying the parameter. That is why the table above
+reads `@quarantine` + `@quarantine-until:<date>` rather than one combined tag.
 
 Every `@draft` also carries an evidence comment directly above it:
 
@@ -104,7 +111,7 @@ then it gets deleted. Three rules hold the line:
 
 - **Dedup on add.** A new scenario that asserts what an existing one asserts is not coverage,
   it is duplicated runtime. Compare by behavior, not by wording.
-- **Quarantine has a deadline.** `@quarantine:<date>` past its date is reported by
+- **Quarantine has a deadline.** `@quarantine-until:<date>` past its date is reported by
   `/tddbanking:audit` as debt. Fix it or delete it — a permanently quarantined test is a lie.
 - **Tier the suite.** `@smoke` stays fast enough to gate every PR. The full bank can be
   slower and run on a schedule.

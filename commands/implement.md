@@ -28,8 +28,10 @@ about the app, and a batch hides which scenario found what.
      This is a success; do not manufacture a red first.
    - **Red** → hand the failure to the `failure-triager` agent. Then:
      - `defect` → **the bank found a bug.** Leave the scenario live and failing, or tag it
-       `@known-defect` if the suite must stay green while it is fixed. Record the finding for
-       `/tddbanking:file`. Do not fix the app here.
+       `@known-defect` plus `@defect-change:<name>` once `/tddbanking:file` has created the change, so the gate
+       stays usable for unrelated work while the full run keeps the failure visible. Record
+       the finding for `/tddbanking:file`. Do not fix the app here, and never apply the tag
+       without a change to point it at — an untagged owner is how a defect becomes furniture.
      - `flake` → fix the test and re-run. The scenario is not live until it is stable.
      - `stale` → the draft described the wrong behavior. Correct it, say why, re-run.
 

@@ -38,7 +38,7 @@ quietly gutted.
 | Verdict | Action | Bank change |
 |---|---|---|
 | `defect` | File a finding; do not fix the app inside the loop | none — the scenario was right |
-| `flake` | Fix the test. If it cannot be fixed now, tag `@quarantine:<date>` with a real deadline | scenario stays, stops gating |
+| `flake` | Fix the test. If it cannot be fixed now, tag `@quarantine` + `@quarantine-until:<date>` | scenario stays, stops gating |
 | `stale` | Update the scenario, stating what changed and why | scenario rewritten |
 
 ## Never

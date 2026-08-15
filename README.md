@@ -124,7 +124,7 @@ abandon an e2e suite. The **failure-triager** agent returns one of three verdict
 | Verdict | Meaning | Response |
 |---|---|---|
 | `defect` | The app is wrong | File a finding |
-| `flake` | The test is unreliable | Fix it, or `@quarantine:<date>` with a real deadline |
+| `flake` | The test is unreliable | Fix it, or `@quarantine` + `@quarantine-until:<date>` |
 | `stale` | The app changed on purpose | Update the scenario, citing the change |
 
 It is biased toward `defect`: calling a real bug "stale" edits away the finding permanently,

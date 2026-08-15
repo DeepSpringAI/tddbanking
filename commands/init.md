@@ -53,7 +53,7 @@ and ask rather than guessing a port.
    ```json
    "bdd:gen":    "bddgen --tags \"not @draft\"",
    "test:bank":  "npm run bdd:gen && playwright test --project=bank --pass-with-no-tests",
-   "test:smoke": "bddgen --tags \"@smoke and not @draft\" && playwright test --project=bank --pass-with-no-tests"
+   "test:smoke": "bddgen --tags \"@smoke and not @draft and not @known-defect and not @quarantine\" && playwright test --project=bank --pass-with-no-tests"
    ```
    `--pass-with-no-tests` matters more than it looks. Straight after `/tddbanking:discover`
    the bank is entirely drafts, so generation emits nothing and Playwright exits 1 with
