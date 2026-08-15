@@ -202,26 +202,35 @@ See [DESIGN.md](DESIGN.md) for the reasoning behind the model.
 
 ## Status
 
-v0.1.0. The loop is prompt-level guidance — no hooks run on your machine.
+v0.2.0. The loop is prompt-level guidance — no hooks run on your machine.
 
 ### What has been verified
 
-The whole loop was run against a real application — a pharma congress platform with an
-existing Playwright suite (59 tests), two dev servers and role-based navigation:
+**v0.1.0 was run end-to-end against a real application** — a pharma congress platform with an
+existing Playwright suite (59 tests), two dev servers and role-based navigation. `init` merged
+into that config in 17 lines with both suites still resolving; three scouts returned 66
+evidenced candidates; a scenario went red, was triaged `defect` at high confidence, and became
+an OpenSpec change passing `--strict`. Most of this plugin's guardrails exist because that run
+broke without them.
 
-- `init` merged into that existing config in 17 lines, and both suites still resolve
-- three scouts returned **66 evidenced candidates** across 11 capabilities
-- a scenario taken live went **red**, `failure-triager` classified it `defect` at high
-  confidence after four isolated runs plus hand reproduction, and refused to call it stale
-  because no commit or ticket justified the behavior
-- the finding became an OpenSpec change that passes `openspec validate --strict`
+**v0.2.0's two new agents were validated against known answers** on the same application:
 
-That run is also where most of this plugin's guardrails come from — the crawl consent rules,
-`--pass-with-no-tests`, per-project `testDir`, and the pinned tag vocabulary all exist
-because the trial broke without them.
+- `promise-auditor` audited two documented promises and got both right — one `contradicted`,
+  independently locating the deciding line of code, and one `implemented`, correctly cleared.
+  That second result is the important one: the agent is biased toward `contradicted`, and the
+  risk was that it would flag everything.
+- `reachability-probe` judged three candidates and got all three right, twice more precisely
+  than the human analysis it was checked against. It also verified that a passing scenario was
+  not vacuously passing.
 
-Untested: installation from GitHub end to end, and `verify` against a bank large enough for
-suite runtime to matter.
+Also verified: 13 tests covering the coverage parser, `plugin validate` and
+`plugin tag --dry-run` clean, a pristine clone installing and registering 6 commands and
+7 agents, and the installed copy reporting a real 58-scenario bank correctly.
+
+**Not yet verified: the four-turn loop end-to-end.** The turn structure, `capability-implementer`,
+the parallel worktree fan-out and the sharded verify have not been run as a complete cycle
+against a real repository. The pieces are tested; the assembly is not. If you adopt this
+before that happens, expect the seams between turns to be where it breaks.
 
 ## License
 
