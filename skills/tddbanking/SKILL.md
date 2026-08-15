@@ -51,6 +51,7 @@ On a `Scenario`:
 | `@quarantine:<YYYY-MM-DD>` | Known flaky, excluded from gating, must be fixed or deleted by that date. |
 | `@priority:high\|medium\|low` | Drives what `/tddbanking:implement` picks next. |
 | `@from-crawl` `@from-bug:<id>` `@from-story:<id>` | Which discovery modality found it. |
+| `@gap-suspected` | The behavior was promised somewhere but appears unbuilt. Not merely untested — implementing it needs development first, so it routes to `/tddbanking:file`, not `/tddbanking:implement`. |
 | `@from-backend:<path>` | Reserved: a backend test asserting the same behavior. |
 
 Every `@draft` also carries an evidence comment directly above it:

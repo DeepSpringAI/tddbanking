@@ -29,6 +29,23 @@ is far likelier to recur than one that never has.
 promised behavior. Flag anything you cannot find in the app at all — a promise with no
 implementation is a finding in itself.
 
+## Tags you must use
+
+Use exactly these — do not invent variants. The bank's audit parses them literally, so
+`@from-stories` where `@from-story:` was meant is an invisible scenario.
+
+| Modality | Tag |
+|---|---|
+| app-crawl | `@from-crawl` |
+| defect-driven | `@from-bug:<id-or-sha>` plus `@regression` |
+| story-driven | `@from-story:<doc-or-ticket-id>` |
+
+Add `@priority:high\|medium\|low` to every candidate, and `@draft` always.
+
+Add `@gap-suspected` when the source promises a behavior you could not find implemented at
+all. That is a finding in its own right: the scenario is not merely untested, it may be
+unbuilt, and it cannot be taken live until someone builds it.
+
 ## The evidence rule
 
 Every candidate cites concrete evidence: a route, a control, a commit SHA, a ticket id, a
