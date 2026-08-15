@@ -166,6 +166,25 @@ See [DESIGN.md](DESIGN.md) for the reasoning behind the model.
 
 v0.1.0. The loop is prompt-level guidance — no hooks run on your machine.
 
+### What has been verified
+
+The whole loop was run against a real application — a pharma congress platform with an
+existing Playwright suite (59 tests), two dev servers and role-based navigation:
+
+- `init` merged into that existing config in 17 lines, and both suites still resolve
+- three scouts returned **66 evidenced candidates** across 11 capabilities
+- a scenario taken live went **red**, `failure-triager` classified it `defect` at high
+  confidence after four isolated runs plus hand reproduction, and refused to call it stale
+  because no commit or ticket justified the behavior
+- the finding became an OpenSpec change that passes `openspec validate --strict`
+
+That run is also where most of this plugin's guardrails come from — the crawl consent rules,
+`--pass-with-no-tests`, per-project `testDir`, and the pinned tag vocabulary all exist
+because the trial broke without them.
+
+Untested: installation from GitHub end to end, and `verify` against a bank large enough for
+suite runtime to matter.
+
 ## License
 
 MIT. OpenSpec is MIT; `webapp-testing` is Apache-2.0. Neither is redistributed here.

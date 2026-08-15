@@ -84,9 +84,11 @@ The bank is the source of truth for *what should work*. OpenSpec is the mechanis
 *addressing what does not*. That makes it a downstream consumer, needed only by
 `/tddbanking:file`, not a dependency of the bank itself.
 
-Findings transfer into OpenSpec almost for free: a failing scenario is already Given/When/Then,
-so it drops into a delta spec with no translation. The bank and the change reference each
-other, so the spec records how it will be proven and the bank records what is being fixed.
+Findings transfer into OpenSpec cheaply. A failing scenario is already a statement of required
+behavior, so the reasoning transfers whole; only the syntax is reshaped, and `/tddbanking:file`
+carries the mapping (including OpenSpec's four-hashtag `#### Scenario:` rule, which fails
+silently if you get it wrong). The bank and the change reference each other, so the spec
+records how it will be proven and the bank records what is being fixed.
 
 ## Division of labour between the testing tools
 
