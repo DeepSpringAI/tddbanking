@@ -9,8 +9,9 @@
  *
  * Usage: node scripts/bank-stats.mjs [--dir features] [--json]
  */
-import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { readdirSync, readFileSync, statSync, realpathSync } from 'node:fs';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const SCENARIO = /^\s*(Scenario Outline|Scenario|Example):\s*(.*)$/;
 const TAG_LINE = /^\s*@\S/;
@@ -152,4 +153,21 @@ function main() {
   }
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) main();
+/**
+ * Run main() only when invoked directly, not when imported by the tests.
+ *
+ * Compare *real* paths. Node resolves import.meta.url through symlinks while process.argv[1]
+ * keeps the path as typed, and plugins are installed under a symlinked directory on some
+ * setups -- so the naive `import.meta.url === 'file://' + process.argv[1]` check silently
+ * fails there and the script prints nothing at all.
+ */
+function invokedDirectly() {
+  if (!process.argv[1]) return false;
+  try {
+    return realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url));
+  } catch {
+    return false;
+  }
+}
+
+if (invokedDirectly()) main();

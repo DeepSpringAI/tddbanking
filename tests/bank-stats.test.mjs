@@ -23,5 +23,21 @@ check('drafts missing evidence are flagged', s.missingEvidence.length, 1);
 check('feature-level capability applies to scenarios', Object.keys(s.byCapability), ['tricky']);
 check('source counts handle bare and parameterised tags', s.bySource['@from-story'], 2);
 
+// Regression: the CLI must actually print when invoked through a symlinked path.
+// Plugins install under a symlinked dir on some setups; comparing import.meta.url to
+// 'file://' + argv[1] silently fails there and the script produces no output at all.
+import { execFileSync, } from 'node:child_process';
+import { mkdtempSync, symlinkSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join as pjoin, resolve } from 'node:path';
+{
+  const dir = mkdtempSync(pjoin(tmpdir(), 'bankstats-'));
+  const link = pjoin(dir, 'linked-scripts');
+  symlinkSync(resolve('scripts'), link);
+  const out = execFileSync('node', [pjoin(link, 'bank-stats.mjs'), '--dir', 'tests/fixtures/features'], { encoding: 'utf8' });
+  check('CLI prints when run through a symlinked path', out.includes('BANK:'), true);
+  rmSync(dir, { recursive: true, force: true });
+}
+
 console.log(failures ? `\n${failures} FAILED` : '\nall passed');
 process.exit(failures ? 1 : 0);
