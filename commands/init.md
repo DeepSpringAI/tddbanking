@@ -16,9 +16,34 @@ and ask rather than guessing a port.
 3. **Install** `playwright-bdd` and `@playwright/test` as dev dependencies, then
    `npx playwright install chromium`.
 4. **Write the scaffold** from `${CLAUDE_PLUGIN_ROOT}/templates/`:
-   - `playwright.config.ts` — **skip if one exists.** A repo that already uses Playwright has
-     a config worth keeping: add the `defineBddConfig` block and the `testDir` it returns to
-     the existing file by hand, and say exactly what you changed.
+   - `playwright.config.ts` — **skip if one exists**, and merge instead. A repo that already
+     uses Playwright has a config worth keeping, and its existing specs must keep running.
+     Playwright has a single top-level `testDir`, so the bank cannot claim it. Give the bank
+     its **own project** with its own `testDir`, leaving the top-level one to the existing
+     suite:
+
+     ```ts
+     import { defineBddConfig } from 'playwright-bdd';
+
+     const bankTestDir = defineBddConfig({
+       features: 'features/**/*.feature',
+       steps: ['steps/**/*.ts', 'pages/**/*.ts'],
+       outputDir: '.features-gen',
+     });
+
+     export default defineConfig({
+       testDir: './tests/e2e',          // untouched, the existing suite
+       projects: [
+         { name: 'bank', testDir: bankTestDir, use: { ...devices['Desktop Chrome'] } },
+         // ...existing projects, unchanged
+       ],
+     });
+     ```
+
+     Top-level `use` and `webServer` are inherited by the bank project, so an existing server
+     setup is reused rather than duplicated. Say exactly what you changed, then confirm the
+     existing suite still resolves: `npx playwright test --list` should report the same file
+     count as before, plus the bank.
    - `pages/BasePage.ts`, `steps/fixtures.ts`, `steps/example.ts`,
      `features/example.feature`
    - In the config's `webServer` block, replace `command` and `url` with this repo's real dev
@@ -27,11 +52,13 @@ and ask rather than guessing a port.
 5. **Add scripts** to `package.json`, exactly these — the tag filter is not optional:
    ```json
    "bdd:gen":    "bddgen --tags \"not @draft\"",
-   "test:bank":  "npm run bdd:gen && playwright test",
-   "test:smoke": "bddgen --tags \"@smoke and not @draft\" && playwright test"
+   "test:bank":  "npm run bdd:gen && playwright test --project=bank",
+   "test:smoke": "bddgen --tags \"@smoke and not @draft\" && playwright test --project=bank"
    ```
-   Translate `npm run` to the detected package manager. Explain to the user, in one line,
-   that calling `bddgen` bare will fail on drafts by design.
+   Drop `--project=bank` **only** when the config has no other projects — otherwise
+   `test:bank` drags the repo's existing suite along and the bank's runtime stops meaning
+   anything. Translate `npm run` to the detected package manager. Explain to the user, in one
+   line, that calling `bddgen` bare will fail on drafts by design.
 6. **Gitignore** `.features-gen/`, `test-results/`, `playwright-report/`.
 7. **Add CI** from `${CLAUDE_PLUGIN_ROOT}/templates/workflows/bank.yml` to
    `.github/workflows/bank.yml` — skip if a workflow already runs Playwright, and instead

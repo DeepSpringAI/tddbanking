@@ -137,8 +137,8 @@ while the reverse costs one human minute.
    `/tddbanking:audit` reports as debt, and a fast `@smoke` tier that gates PRs.
 2. **Gherkin theater.** `Given I click the button` is Playwright with extra ceremony.
    Countered by declarative scenarios and zero locators outside Page Objects.
-3. **The bank as someone else's problem.** It lives in the app repo and runs on every PR, not
-   in a detached QA project that drifts.
+3. **The bank as someone else's problem.** It lives in the app repo and runs on every PR —
+   `/tddbanking:init` writes the workflow — not in a detached QA project that drifts.
 
 ## What it does not ship
 
@@ -156,7 +156,8 @@ skills/tddbanking/
   writing-scenarios.md  declarative Gherkin, thin steps, POM
   triage.md             defect vs flake vs stale
 agents/      scenario-scout, browser-runner, failure-triager
-templates/   playwright.config.ts, BasePage, fixtures, example feature
+templates/   playwright.config.ts, BasePage, fixtures, example feature,
+             workflows/bank.yml (smoke on PRs, full bank nightly)
 ```
 
 See [DESIGN.md](DESIGN.md) for the reasoning behind the model.
