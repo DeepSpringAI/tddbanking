@@ -3,11 +3,10 @@ description: Turn 4 of 4 - turn every finding into an OpenSpec change proposal. 
 argument-hint: optional finding id to limit to (default is all open findings)
 ---
 
-**Turn 4 of the four-turn loop, and the last one.** This turn requires the OpenSpec CLI.
+**Turn 4 of five.** This turn requires the OpenSpec CLI.
 
-**The loop ends here.** It does not restart, and you do not begin another round of discovery.
-What follows is ordinary development against the proposals this turn creates. A new round of
-turn 1 happens only when the user explicitly asks for one.
+It turns every finding into a change proposal and stops there. It does **not** implement
+anything — turn 5 does that, governed by the `tdd` skill.
 
 Scope: $ARGUMENTS — if empty, every open finding in `findings.md`.
 
@@ -40,41 +39,42 @@ Three sources, and all three are in scope:
 Several failing scenarios caused by one broken behaviour are **one** change, not several.
 Group by cause, not by scenario.
 
-For each group, invoke the `openspec-propose` skill with what a user cannot currently do in
-user terms, the scenarios, and the evidence path from triage. Respect that skill's planning
-boundary: it produces artifacts and stops. Do not implement.
+For each group, **invoke the Skill tool with `openspec-propose`**, passing what a user cannot
+currently do in user terms, the scenarios, and the evidence path from triage.
+
+Invoke it — do not hand-write the artifacts yourself. Producing a proposal, delta spec, design
+and task list by hand is re-implementing a tool that already does it, and it will drift from
+whatever schema the installed OpenSpec version expects. If the Skill tool has no
+`openspec-propose`, say so and stop rather than improvising the format.
+
+Respect that skill's planning boundary: it produces artifacts and stops. Do not implement.
 
 Dispatch the groups in parallel — they are independent.
 
 ## 4. Transfer the scenarios into delta specs
 
-The meaning transfers whole; the syntax does not:
+**Get the format from OpenSpec, not from here.** Run
+`openspec instructions specs --change <name>`; it prints the authoritative artifact rules for
+the schema this project actually uses, which is more reliable than any summary that ages in a
+plugin.
 
-| Gherkin | OpenSpec delta spec |
-|---|---|
-| (none) | `### Requirement: <name>`, using SHALL/MUST — scenarios cannot stand alone |
-| `Scenario: <name>` | `#### Scenario: <name>` — **exactly four hashtags** |
-| `Given ...` | fold into the `WHEN` context, or state as a precondition |
-| `When` / `Then` / `And` | `- **WHEN** ...` / `- **THEN** ...` / `- **AND** ...` |
+The meaning of a scenario transfers whole; only its syntax is reshaped. One trap is worth
+repeating because it fails silently: OpenSpec scenarios need **exactly four hashtags**
+(`#### Scenario:`). Three, or a bullet list, and the scenario is simply not seen.
 
-Three hashtags or a bullet list **fails silently** — the scenario is simply not seen. Run
-`openspec validate <change> --strict` on every change before reporting success; a change with
-zero recognised scenarios is rejected, which is your check that the reformat landed.
+Run `openspec validate <change> --strict` on every change before reporting success. A change
+with zero recognised scenarios is rejected, which is your check that the reformat landed.
 
 ## 5. Link both ways, then close the loop
 
 Rewrite each `@defect-change:F-n` tag to the real change name, so the bank records what is
 being addressed and the proposal records how it will be proven.
 
-Report the changes created, which findings each covers, and that the loop is complete.
+Report the changes created and which findings each covers.
 
-Tell the user the next step is theirs: implement the changes with the `openspec-apply-change`
-skill, **using the `tdd` skill for the development itself**. That handoff is the point of the
-whole loop, and it is unusually well set up here — each change already ships with a failing
-browser scenario, so the red half of red-green is written, evidenced, and agreed. The work is
-to make it green without touching the assertion.
+Then tell the user the next step is `/tddbanking:develop`, which takes each change to green
+test-first — and note what makes that step unusually well set up: every proposal carries a
+failing browser scenario, so the red half of red-green is already written, evidenced and agreed.
 
-This is drive mode, where the `tdd` skill's rules apply in full: red before green, one slice at
-a time, and no speculative work beyond what the scenario demands. Say explicitly that a further round of `/tddbanking:discover` should wait until those
-changes have landed, because rediscovering the same gaps against unchanged code produces the
-same bank.
+Say plainly that turn 5 is the first step that writes application code, so it will ask for
+scope confirmation and work in isolated worktrees.

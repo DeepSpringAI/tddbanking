@@ -142,9 +142,9 @@ then it gets deleted. Three rules hold the line:
 - **Tier the suite.** `@smoke` stays fast enough to gate every PR. The full bank can be
   slower and run on a schedule.
 
-## The four-turn loop
+## The loop
 
-The loop is four turns, each ending deliberately. It does not restart itself.
+Five turns, each ending deliberately. It does not restart itself.
 
 ```
 init  (once, outside the loop)
@@ -152,14 +152,16 @@ init  (once, outside the loop)
   ├─ turn 1  discover   find everything, probe reachability, report      ─┐ ends
   ├─ turn 2  implement  take EVERY reachable draft live                  ─┤ ends
   ├─ turn 3  verify     run everything, triage every failure             ─┤ ends
-  └─ turn 4  file       every finding becomes an OpenSpec proposal       ─┘ LOOP ENDS
-                                                                            │
-                        ordinary development against those proposals  ◄─────┘
+  ├─ turn 4  file       every finding becomes an OpenSpec proposal       ─┤ ends
+  └─ turn 5  develop    take every change to green, test-first           ─┘ LOOP ENDS
 ```
 
-Turn 4 is terminal. After it, the user implements the changes; a new turn 1 happens **only**
-when they explicitly ask for one. Rediscovering the same gaps against unchanged code just
-reproduces the same bank.
+Turn 5 is terminal. A new turn 1 happens **only** when the user asks — rediscovering the same
+gaps against code that just changed underneath would reproduce the same bank.
+
+**Turn 5 is the only turn that writes application code.** Everything before it touches tests. It
+therefore asks for scope confirmation before starting and works in isolated worktrees, one per
+change.
 
 **Each turn's contract is completeness, not selection.** Turn 2 implements every reachable
 draft; turn 3 triages every failure; turn 4 files every finding. This is why no turn ever
@@ -172,8 +174,25 @@ modality plus an extractor per document class plus a reachability probe per cand
 parallel. Implementation runs one agent per capability, each in **its own worktree**, because
 they all write code. Verification shards by capability with **a distinct port per shard**.
 
-Only `/tddbanking:file` needs the OpenSpec CLI. Everything else runs on a repository that has
-never heard of it.
+Turns 4 and 5 need the OpenSpec CLI; turns 1-3 run on a repository that has never heard of it.
+
+## Skills this loop uses rather than restates
+
+This plugin owns the sequencing. It owns almost none of the expertise, and it must **invoke**
+these rather than paraphrase them — a summary ages, drifts from the installed version, and
+quietly becomes wrong.
+
+| Skill | Invoked at | For |
+|---|---|---|
+| `tdd` | turns 2 and 5 | What makes a test worth keeping; red-green in turn 5 |
+| `openspec-propose` | turn 4 | Producing the change artifacts |
+| `openspec-apply-change` | turn 5 | Working a change's task sequence |
+| `webapp-testing` | turn 1, turn 3 | Driving a browser for exploration and reproduction |
+
+**Invoke them by name through the Skill tool, and say so when one is missing.** An agent told
+only that a skill exists usually proceeds without it — especially when the surrounding text has
+already paraphrased the useful part. Where this plugin does restate a rule, it is a fallback for
+the skill being absent, and it is marked as such.
 
 ## Coverage is computed, never estimated
 

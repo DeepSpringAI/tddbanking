@@ -1,7 +1,7 @@
 {
   "name": "tddbanking",
-  "description": "Grows a bank of browser-verified user scenarios in four deliberate turns: discover what a real user should be able to do (and whether it is reachable), implement every gap in Playwright BDD, triage every failure, then file what is broken as change proposals.",
-  "version": "0.3.2",
+  "description": "Finds the browser behaviour your tests miss, writes tests for all of it, files what is broken as OpenSpec proposals, then develops those proposals test-first. Invokes the tdd skill, OpenSpec and playwright-bdd rather than reimplementing them.",
+  "version": "0.4.0",
   "author": {
     "name": "DeepSpring",
     "url": "https://github.com/DeepSpringAI"

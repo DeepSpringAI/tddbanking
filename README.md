@@ -17,7 +17,7 @@ problem. The plugin's contribution is the handoffs between them, and the discipl
 instead of stopping after the interesting one. Each credit below says where in
 [the cycle](#the-cycle) it does its work.
 
-**[The `tdd` skill](https://github.com/mattpocock/skills) — by Matt Pocock** · *used at steps 2 and 5*
+**[The `tdd` skill](https://github.com/mattpocock/skills) — by Matt Pocock** · *invoked at steps 2 and 5*
 The red/green discipline, and the reason the tests are worth keeping. It defines what a good
 test is, where tests belong (*seams* — the public boundary you observe behaviour at), and the
 anti-patterns that quietly ruin a suite: tests coupled to implementation, tests that recompute
@@ -25,13 +25,13 @@ their own expected value, tests written in bulk against imagined behaviour. tddb
 it rather than restating it. Using it visibly improves what Claude produces; that is why it is
 here.
 
-**[OpenSpec](https://github.com/Fission-AI/OpenSpec)** · *used at step 4*
+**[OpenSpec](https://github.com/Fission-AI/OpenSpec)** · *invoked at steps 4 and 5*
 Turns a rough requirement into a real specification — proposal, delta specs, design, and a
 task-by-task implementation plan. In practice it plans a change better than the built-in
 planning modes do. tddbanking uses it at the end: every proven bug leaves the loop as an
 OpenSpec change, not as a bug report someone has to re-specify.
 
-**[playwright-bdd](https://github.com/vitalets/playwright-bdd) — by Vitaliy Potapov** · *used at steps 2 and 3*
+**[playwright-bdd](https://github.com/vitalets/playwright-bdd) — by Vitaliy Potapov** · *the format, at steps 2, 3 and 5*
 Gherkin feature files compiled into Playwright specs. Thin step definitions, locators in Page
 Objects. It is what makes a browser test readable as a requirement instead of a script, which
 matters because these tests double as the acceptance criteria handed to OpenSpec.
@@ -43,16 +43,15 @@ If you already use any of these, this plugin is the sequencing you were going to
 
 ## The cycle
 
-Four turns, then a handoff. Each turn ends deliberately so you can look at the result before the
-next begins.
+Five turns. Each ends deliberately so you can look at the result before the next begins.
 
 ```
 1  discover   what should a user be able to do, and what covers it today?
 2  implement  write browser tests for everything that has none      ── tdd: what a good test is
 3  verify     run them all; triage every failure
-4  file       turn each proven bug into an OpenSpec change proposal   ← loop ends
-   ┊
-5  you build  implement those proposals                             ── tdd: red → green
+4  file       turn each proven bug into an OpenSpec change proposal
+5  develop    take every change to green, test-first                ── tdd: red → green
+                                                                       ← loop ends
 ```
 
 **1. Discover.** Reads your *existing* test suites first, so it looks for what is untested
@@ -74,14 +73,17 @@ while the screen is broken.
 **stale scenario** — with a citation. A red browser test means three unrelated things, and
 "probably flaky, re-run it" is how suites die.
 
-**4. File.** Every proven defect becomes an OpenSpec change proposal, grouped by cause. Then it
-stops. A new round happens when you ask for one.
+**4. File.** Every proven defect becomes an OpenSpec change proposal, grouped by cause. It
+invokes OpenSpec to produce them rather than writing the artifacts by hand.
 
-**5. Then you build — and this is the point of all of it.** Each proposal arrives with a
-failing browser scenario attached, so **the red half of red-green is already written, evidenced
-and agreed.** The `tdd` skill governs the work from there: red before green, one slice at a
-time, and make it pass without touching the assertion. That is the handoff the whole loop
-exists to set up, which is why it is drawn here even though the plugin does not run it for you.
+**5. Develop — and this is the point of all of it.** Each proposal carries a failing browser
+scenario, so **the red half of red-green is already written, evidenced and agreed.** Turn 5
+invokes the `tdd` skill and works each change to green without touching the assertion. When a
+scenario passes, its `@known-defect` tag comes off — the bank said what was broken and now says
+it is fixed.
+
+This is the only turn that writes application code, so it asks you to confirm scope first and
+works in an isolated worktree per change.
 
 Run it again after your next feature and it picks up from the bank it already built.
 
@@ -220,9 +222,32 @@ Then, in the repo of the app you want covered:
 /tddbanking:discover    # turn 1 — it tells you what to run next
 ```
 
-**Requirements.** Node, and a web app you can run locally. [OpenSpec](https://github.com/Fission-AI/OpenSpec)
-(`npm i -g @fission-ai/openspec`) is needed only by turn 4. The `tdd` skill and `webapp-testing`
-are used when present and reported as absent when not.
+### What it needs
+
+Node, and a web app you can run locally. Beyond that it depends on the three projects it is
+built from — it **invokes** them, so they have to be installed. Turns 1–3 work without any of
+them; the last two do not.
+
+```bash
+npm i -g @fission-ai/openspec        # the CLI
+openspec init --tools claude         # once, in YOUR project
+```
+
+Note what the second command does, because it is easy to miss: **`openspec init` is what creates
+the `openspec-*` skills**, generating them into that project's `.claude/skills/`. They are
+project-scoped, not global — installing the CLI alone gives you no skills, and turns 4 and 5
+will report them missing.
+
+The **`tdd` skill** is needed by turn 5 and improves turn 2. It is a personal Claude Code skill
+this plugin does not ship — get it from
+[mattpocock/skills](https://github.com/mattpocock/skills) and put it in `~/.claude/skills/tdd/`.
+Without it the loop still finds and files your bugs; it just stops before fixing them.
+
+`webapp-testing` is used for app-crawl and for reproducing failures by hand. If it is missing,
+the crawl drives Playwright directly.
+
+**Turn 1 checks all four and tells you what is missing before you start**, rather than letting
+you discover it four turns later.
 
 **Before the crawl writes anything**, it asks you to confirm the target is disposable and its
 outbound email is sandboxed. Crawling means *doing* things — submitting forms, cancelling

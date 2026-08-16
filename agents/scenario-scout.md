@@ -17,7 +17,8 @@ each being blind to the others.
 Documentation is not your job. `promise-extractor` and `promise-auditor` handle it, and they
 handle it better than a general sweep would.
 
-**app-crawl** — drive the running app with the `webapp-testing` skill.
+**app-crawl** — drive the running app. **Invoke the Skill tool with `webapp-testing`** for how
+to do it; if it is absent, say so in your report and drive Playwright directly.
 
 > **Crawling writes.** Discovering what a user can do means doing it: this modality will
 > submit forms, cancel records and trigger whatever the app triggers. Before you touch a
@@ -88,6 +89,7 @@ so the scenario generates reusable steps rather than single-purpose ones. Write
 Then, as your final lines and in exactly this form:
 
 ```
+SKILLS: webapp-testing loaded | MISSING | not needed for this modality
 CONSIDERED: <how many behaviours you assessed>
 RETURNED: <how many candidates you are returning>
 DROPPED: <how many you discarded>
