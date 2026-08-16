@@ -6,18 +6,24 @@ argument-hint: optional capability to limit to (default is everything)
 **Turn 2 of the four-turn loop.** Read the `tddbanking` skill and
 `${CLAUDE_PLUGIN_ROOT}/skills/tddbanking/writing-scenarios.md` before writing any test code.
 
-Also read the **`tdd` skill** if it is available. It is the reference for what makes a test
-worth keeping, and two of its anti-patterns bite hard here:
+**Load the `tdd` skill before writing any test code: invoke the Skill tool with `tdd`.** Do not
+skip this on the grounds that turn 2 is backfill rather than test-first development. Its
+red-before-green rules do not apply here — you are documenting behaviour that already exists —
+but everything it says about *what makes a test worth keeping* applies in full, and that is the
+part that decides whether this bank is an asset or 58 files of noise.
 
-- **Implementation-coupled** — "verifies through a side channel (querying the database instead
-  of using the interface)". Asserting a browser scenario by reading the API is exactly that.
-  It is tempting because it is easy, and it quietly stops testing what a user experiences.
-  Use the API for *preconditions* if you must; assert through the interface.
-- **Tautological** — expected values must come from an independent source of truth, which here
-  is the scenario and the document it cites, never what the running application currently
-  returns.
+If the Skill tool has no `tdd`, say so explicitly in your report rather than continuing quietly.
+It is a separate skill this plugin does not ship
+([mattpocock/skills](https://github.com/mattpocock/skills)); without it you are working without
+the standard this turn assumes, and the caller should know. Only in that case, apply these two
+rules as a reduced substitute:
 
-If the `tdd` skill is not installed, say so once and continue — the loop does not require it.
+- **Never assert through a side channel.** Checking a browser scenario by reading the API is the
+  implementation-coupled anti-pattern: it passes while the screen is broken. The API establishes
+  preconditions; the interface is where outcomes are observed.
+- **Never take an expected value from the running application.** It comes from the scenario and
+  the document the scenario cites, or the test is tautological and can never disagree with the
+  code.
 
 **The contract of this turn is completeness.** Every implementable draft goes live, or the
 turn has failed and you say so. There is no "the most important ones". Partial implementation
@@ -44,7 +50,9 @@ at once, each with `isolation: "worktree"`. They write code, so they need isolat
 will clobber one another.
 
 Give each agent: its capability, the scenarios it owns, the app's base URL and start command,
-and the existing Page Object and step conventions.
+the existing Page Object and step conventions, and **an explicit instruction to load the `tdd`
+skill via the Skill tool**. Do not assume the agent will find it on its own — a subagent that is
+merely told a skill exists usually proceeds without it.
 
 **A worktree isolates files, not the running application.** Implementers have to run their
 scenarios, and a shared app instance means they reset and mutate each other's state — which

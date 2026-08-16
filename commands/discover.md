@@ -12,6 +12,22 @@ Focus: $ARGUMENTS — if empty, cover the whole application.
 
 ## 1. Preflight
 
+**Check the skills this loop depends on, and report what is missing.** Invoke the Skill tool for
+each and note whether it resolves:
+
+| Skill | Needed by | If absent |
+|---|---|---|
+| `webapp-testing` | this turn (app-crawl), turn 3 | crawl drives Playwright directly |
+| `tdd` | turns 2 and 5 | turn 2 degrades; **turn 5 cannot run** |
+| `openspec-propose` | turn 4 | turn 4 cannot run |
+| `openspec-apply-change` | turn 5 | turn 5 cannot run |
+
+Report the result once, here, at the start — not four turns later when someone is mid-cycle.
+`tdd` in particular is a separate personal skill that this plugin does not ship
+([mattpocock/skills](https://github.com/mattpocock/skills)), so a fresh machine will not have
+it, and its absence is the difference between a loop that ends in working code and one that
+ends in a pile of proposals.
+
 - Read the existing bank so discovery dedups against it rather than re-finding it:
   `node ${CLAUDE_PLUGIN_ROOT}/scripts/bank-stats.mjs --json`
 - **Read the repository's existing test suites too**, not just the bank. Find them (`tests/`,

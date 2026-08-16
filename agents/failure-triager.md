@@ -21,7 +21,7 @@ path, find it under `test-results/`.
 3. Re-run twice more unchanged. Inconsistent → `flake`.
 4. Check `git log` on the UI and code the scenario touches. A recent, deliberate change that
    the scenario contradicts → `stale`. Absent that evidence, it is not stale.
-5. Still ambiguous → reproduce by hand with the `webapp-testing` skill. If a person cannot do
+5. Still ambiguous → reproduce by hand, **invoking the Skill tool with `webapp-testing`**. If a person cannot do
    what the scenario describes, it is a `defect` regardless of what the trace suggests.
 
 ## Bias

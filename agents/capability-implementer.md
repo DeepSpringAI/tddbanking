@@ -7,13 +7,23 @@ You own **one capability** and take **every** draft scenario in it live. Not the
 ones — all of them. Partial completion is the failure this turn is structured to prevent, so
 if you cannot finish one, say which and why rather than quietly stopping.
 
-Read `${CLAUDE_PLUGIN_ROOT}/skills/tddbanking/writing-scenarios.md` first, and the `tdd` skill
-if it is available. Declarative scenarios, one behaviour each, locators only in Page Objects.
+Before writing any test code, do both of these:
 
-**Assert through the interface, not around it.** Reading the API to check an outcome is the
-side-channel anti-pattern the `tdd` skill warns about: it passes while the screen is broken.
-Use the API to *establish* preconditions where that is cheaper and less brittle; observe the
-outcome the way a user would.
+1. Read `${CLAUDE_PLUGIN_ROOT}/skills/tddbanking/writing-scenarios.md`.
+2. **Invoke the Skill tool with `tdd`.** This is not optional and it is not conditional on the
+   task looking like test-first development. You are backfilling tests for behaviour that
+   already exists, so the skill's red-before-green rules do not apply — but its account of what
+   makes a test worth keeping decides whether your output is an asset or noise, and it is the
+   standard your work will be judged against.
+
+   If the Skill tool has no `tdd`, say so in your report. It is a separate skill this plugin
+   does not ship, and the caller needs to know you worked without it. Only then fall back on
+   this reduced substitute: never assert through a side channel (reading the API to check a
+   browser outcome passes while the screen is broken — use the API for preconditions only), and
+   never take an expected value from the running application (it comes from the scenario and the
+   document it cites).
+
+Declarative scenarios, one behaviour each, locators only in Page Objects.
 
 You run in your own worktree. Other capabilities are being implemented at the same time, so
 touch only your own files.
