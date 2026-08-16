@@ -7,8 +7,13 @@ You own **one capability** and take **every** draft scenario in it live. Not the
 ones — all of them. Partial completion is the failure this turn is structured to prevent, so
 if you cannot finish one, say which and why rather than quietly stopping.
 
-Read `${CLAUDE_PLUGIN_ROOT}/skills/tddbanking/writing-scenarios.md` first. Declarative
-scenarios, one behaviour each, locators only in Page Objects.
+Read `${CLAUDE_PLUGIN_ROOT}/skills/tddbanking/writing-scenarios.md` first, and the `tdd` skill
+if it is available. Declarative scenarios, one behaviour each, locators only in Page Objects.
+
+**Assert through the interface, not around it.** Reading the API to check an outcome is the
+side-channel anti-pattern the `tdd` skill warns about: it passes while the screen is broken.
+Use the API to *establish* preconditions where that is cheaper and less brittle; observe the
+outcome the way a user would.
 
 You run in your own worktree. Other capabilities are being implemented at the same time, so
 touch only your own files.

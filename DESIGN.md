@@ -96,7 +96,7 @@ records how it will be proven and the bank records what is being fixed.
 |---|---|---|
 | `webapp-testing` (Python, ad hoc) | Exploration: crawl, screenshot, find real locators | Throwaway |
 | playwright-bdd (TypeScript) | Durable regression: the bank | Committed |
-| `tdd` skill | Red-before-green discipline in drive mode | Process |
+| `tdd` skill | Test quality in turn 2; red-before-green in drive mode | Process |
 | OpenSpec | Formalizing findings into changes | Proposals |
 
 The apparent language conflict between the first two is not one: they do different jobs.
@@ -198,3 +198,32 @@ A shared `fixtures.ts` registry is a single file that every implementer must edi
 agent per capability running in parallel worktrees, that is a guaranteed conflict on the one
 turn that most needs to fan out. Steps now construct their own Page Objects from `page`. The
 cost is a line per step file; the benefit is fifteen capabilities implemented at once.
+
+
+## v0.2.2 — wiring the `tdd` skill in for real
+
+Through v0.2.1 the `tdd` skill was named in this document and nowhere else. No command and no
+agent ever told anyone to read it. The ideas had been absorbed — backfill versus drive, never
+edit an assertion to match the application — which is precisely why the omission was invisible:
+the loop looked as though it had covered them.
+
+Two things were genuinely missing.
+
+**Turn 2 had no standard for test quality.** The skill's *implementation-coupled* anti-pattern
+names verifying "through a side channel (querying the database instead of using the interface)".
+That is not hypothetical here: several steps in the first production bank assert a browser
+scenario by reading the API, which passes while the screen is broken. Turn 2 now defers to the
+skill, and says plainly that the API is for establishing preconditions, not for observing
+outcomes.
+
+**Turn 4 handed off into silence.** The loop filed a change and stopped, saying nothing about
+how the work should be done — which is exactly where red-green belongs, and the one place the
+original premise wanted TDD. The handoff now names the skill and points out that the red half
+is already written: the failing scenario is the acceptance test, and the job is to make it green
+without touching the assertion.
+
+The skill also calls horizontal slicing an anti-pattern, and this loop resembles one: all
+scenarios banked, then all tests written. `SKILL.md` states where that objection lands and where
+it does not, rather than pretending the tension is absent. In backfill mode there is no
+implementation to slice and completeness is the point; the objection bites at *imagined*
+behavior, which is what the evidence rule and reachability probing exist to prevent.

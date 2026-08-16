@@ -180,10 +180,20 @@ while the reverse costs one human minute.
 
 ## What it does not ship
 
-The `openspec-*` skills are generated per project by the OpenSpec CLI and rewritten by
-`openspec update`; `webapp-testing` is Anthropic's, Apache-2.0. Both are referenced by name,
-never vendored. `webapp-testing` powers exploration and never produces a committed test —
-throwaway Python reconnaissance in, durable TypeScript Gherkin out.
+Three skills are referenced by name and none is vendored. The `openspec-*` skills are generated
+per project by the OpenSpec CLI and rewritten by `openspec update`; `webapp-testing` is
+Anthropic's, Apache-2.0; the `tdd` skill is a reference this loop defers to rather than
+restates.
+
+Each has one job. `webapp-testing` powers exploration and never produces a committed test —
+throwaway Python reconnaissance in, durable TypeScript Gherkin out. OpenSpec formalises
+findings into changes. The **`tdd` skill governs two things**: what makes a test worth keeping
+in turn 2, and the red-green development that follows turn 4 — where each filed change already
+ships with its failing scenario as the acceptance test, so the red half is written and agreed
+before anyone starts.
+
+Only OpenSpec is required, and only by turn 4. The others are used when present and reported
+as absent when not.
 
 ## Layout
 

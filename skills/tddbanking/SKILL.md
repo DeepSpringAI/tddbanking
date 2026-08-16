@@ -85,13 +85,38 @@ honest outcomes, and which one you get tells you what to do next:
   `/tddbanking:file`. Do not fix the app inside the implement loop.
 
 **Drive mode** — the scenario describes behavior nobody has built yet.
-- Red is mandatory and expected. The scenario becomes an OpenSpec change, development makes
-  it green, and the `tdd` skill's rules govern that work. This is where the bank gives TDD
-  its direction: the bank says what is missing, OpenSpec says how it will be addressed.
+- Red is mandatory and expected. The scenario becomes an OpenSpec change, and the development
+  that follows is governed by the **`tdd` skill** — red before green, one slice at a time, no
+  speculative work. This is where the bank gives TDD its direction: the bank says what is
+  missing, OpenSpec says how it will be addressed, and TDD builds it.
 
 You do not have to declare the mode up front. Run the test; the result tells you which you
 were in. What matters is routing the outcome correctly instead of quietly editing the
 scenario until it passes.
+
+## Where the `tdd` skill fits
+
+The `tdd` skill is the reference for what makes a test worth keeping. This loop leans on it in
+two places and deliberately parts company in a third.
+
+**It governs drive mode.** Development against a filed change is ordinary red-green work, and
+the red half is already written: the failing scenario is the acceptance test. Make it green
+without touching the assertion.
+
+**Its anti-patterns govern turn 2.** Two bite here in particular. *Implementation-coupled* —
+asserting a browser scenario by reading the API is the side channel it warns about, and it
+passes while the screen is broken. *Tautological* — expected values come from the scenario and
+the document it cites, never from what the application currently returns.
+
+**It calls horizontal slicing an anti-pattern, and this loop looks like one.** Turn 1 banks
+every scenario before turn 2 implements any test, which is "all tests first" by shape. The
+difference is what the tests are written against: in backfill mode the software already exists,
+so a scenario documents observed reality rather than imagined behavior, and completeness is the
+whole point — a bank abandoned at 12% is worth nothing. The objection still lands where the
+skill aims it, at *imagined* behavior, which is exactly why every scenario must cite a
+verifiable locator and why reachability is probed before anything is banked. Those two guards
+are the price of banking in bulk. Drive mode is not exempt: there the slicing happens one
+change at a time, after turn 4.
 
 ## Writing scenarios
 
