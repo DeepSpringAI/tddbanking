@@ -22,6 +22,16 @@ each and note whether it resolves:
 | `openspec-propose` | turn 4 | turn 4 cannot run |
 | `openspec-apply-change` | turn 5 | turn 5 cannot run |
 
+Then check the skills have not drifted from what this plugin's prose describes:
+
+```
+node ${CLAUDE_PLUGIN_ROOT}/scripts/check-upstream.mjs
+```
+
+This catches the quiet failure the `SKILLS: MISSING` line cannot: a skill that loads perfectly
+while a rule inside it has changed, leaving our paraphrase of that rule describing something
+nobody says any more. Drift is a prompt to re-read, not a fault — most edits are cosmetic.
+
 Report the result once, here, at the start — not four turns later when someone is mid-cycle.
 Two of these are commonly missing and for different reasons:
 
