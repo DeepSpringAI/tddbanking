@@ -17,5 +17,6 @@
       },
       "homepage": "https://github.com/DeepSpringAI/tddbanking"
     }
-  ]
+  ],
+  "version": "0.2.2"
 }

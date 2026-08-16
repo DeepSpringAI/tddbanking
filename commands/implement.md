@@ -6,6 +6,19 @@ argument-hint: optional capability to limit to (default is everything)
 **Turn 2 of the four-turn loop.** Read the `tddbanking` skill and
 `${CLAUDE_PLUGIN_ROOT}/skills/tddbanking/writing-scenarios.md` before writing any test code.
 
+Also read the **`tdd` skill** if it is available. It is the reference for what makes a test
+worth keeping, and two of its anti-patterns bite hard here:
+
+- **Implementation-coupled** — "verifies through a side channel (querying the database instead
+  of using the interface)". Asserting a browser scenario by reading the API is exactly that.
+  It is tempting because it is easy, and it quietly stops testing what a user experiences.
+  Use the API for *preconditions* if you must; assert through the interface.
+- **Tautological** — expected values must come from an independent source of truth, which here
+  is the scenario and the document it cites, never what the running application currently
+  returns.
+
+If the `tdd` skill is not installed, say so once and continue — the loop does not require it.
+
 **The contract of this turn is completeness.** Every implementable draft goes live, or the
 turn has failed and you say so. There is no "the most important ones". Partial implementation
 is the failure mode this structure exists to prevent.

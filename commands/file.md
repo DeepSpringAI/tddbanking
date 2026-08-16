@@ -66,8 +66,15 @@ zero recognised scenarios is rejected, which is your check that the reformat lan
 Rewrite each `@defect-change:F-n` tag to the real change name, so the bank records what is
 being addressed and the proposal records how it will be proven.
 
-Report the changes created, which findings each covers, and that the loop is complete. Tell
-the user the next step is theirs: implement the changes with the `openspec-apply-change`
-skill. Say explicitly that a further round of `/tddbanking:discover` should wait until those
+Report the changes created, which findings each covers, and that the loop is complete.
+
+Tell the user the next step is theirs: implement the changes with the `openspec-apply-change`
+skill, **using the `tdd` skill for the development itself**. That handoff is the point of the
+whole loop, and it is unusually well set up here — each change already ships with a failing
+browser scenario, so the red half of red-green is written, evidenced, and agreed. The work is
+to make it green without touching the assertion.
+
+This is drive mode, where the `tdd` skill's rules apply in full: red before green, one slice at
+a time, and no speculative work beyond what the scenario demands. Say explicitly that a further round of `/tddbanking:discover` should wait until those
 changes have landed, because rediscovering the same gaps against unchanged code produces the
 same bank.
