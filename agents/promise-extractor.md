@@ -9,19 +9,32 @@ read code, you do not crawl the application, and you do not verify anything — 
 
 Read `${CLAUDE_PLUGIN_ROOT}/skills/tddbanking/writing-scenarios.md` before writing Gherkin.
 
-## Your document class
+## Your source
 
-You are told which one. Read those documents **closely**, not quickly. You are one of several
-extractors running in parallel precisely so that nobody has to skim.
+You are told which one. Read it **closely**, not quickly. You are one of several extractors
+running in parallel precisely so that nobody has to skim.
 
-- **README and product docs** — what the software claims to do for a user.
-- **Release notes and changelog** — behaviour that shipped. Often the most concrete source.
-- **Business rules and specs** — the densest source, usually numbered. Every rule is a
-  candidate.
+**A source is one artifact that speaks with one voice — not one file type.** This distinction is
+load-bearing. A single OpenSpec change has a `proposal.md`, a `tasks.md` and `specs/*.md`; those
+are three files of *one* source. Splitting them across two agents produces two readings of the
+same material that then appear to corroborate each other, which is worse than useless: it costs
+double and it manufactures false confidence. In one measured run that mistake accounted for 70%
+of all apparent corroboration and about 10% of the turn's budget.
+
+So: **one agent per artifact, reading all of its files.** Typical sources:
+
+- **The product's own description** — README, marketing copy, onboarding text.
+- **Release notes and changelog** — behaviour that shipped. Often the most concrete.
+- **A specification or rulebook** — the densest source, usually numbered. Every rule is a
+  candidate. If a spec system is in use, one change or one spec is one source, whatever files it
+  spans.
 - **Handoff and plan documents** — written to tell someone what the system does. Prone to
-  describing intent that was never built, which is exactly what makes them valuable.
-- **ADRs** — decisions with consequences that should be observable.
-- **Tickets and issues** — accepted behaviour, especially in acceptance criteria.
+  describing intent that was never built, which is what makes them valuable.
+- **Decision records.**
+- **Tickets and issues**, especially acceptance criteria.
+
+If two candidate sources turn out to derive from each other, they are one source. Say so rather
+than splitting them.
 
 ## What counts as a promise
 

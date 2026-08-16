@@ -41,3 +41,21 @@ Feature: Parser edge cases
   Scenario: A draft with no evidence comment at all
     Given something
     Then something
+
+  # evidence: observed at /x, and commit abc1234 fixed it once
+  @draft @from-crawl @from-bug:abc1234 @regression @priority:high
+  Scenario: Corroborated by two genuinely different sources
+    Given something
+    Then something
+
+  # evidence: docs say so, and the spec rules repeat it
+  @draft @from-story:doc-3 @from-bug:def5678 @priority:medium
+  Scenario: Corroborated by a document and a defect
+    Given something
+    Then something
+
+  # evidence: proposal.md:12 and specs/auth.md:44 -- both files of the SAME change
+  @draft @from-story:chg-auth-proposal @from-story:chg-auth-specs @priority:high
+  Scenario: Two files of one artifact are not two sources
+    Given something
+    Then something
