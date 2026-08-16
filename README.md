@@ -120,6 +120,76 @@ so a demo of the product's core action would have failed.
 
 ---
 
+## What it costs
+
+The honest answer, measured from the run above rather than estimated. It is not cheap, and it
+is front-loaded.
+
+### Sitting idle: negligible
+
+**~861 tokens** added to every session, whether you use it or not. That is the plugin's whole
+descriptive surface — 6 commands and 7 agents. Installing it does not tax your normal work.
+
+### One full cycle on a 58-scenario bank: ~2M tokens
+
+Measured agent totals from that run:
+
+| Turn | Agents | Tokens | Longest agent |
+|---|---|---|---|
+| 1 · discover | 3 scouts | 308k | 26 min (app crawl) |
+| 1 · reachability | 5 probes | 585k | 12 min |
+| 2 · implement | 6 implementers | 1.05M | 36 min |
+| **subtotal** | **14 agents** | **1.95M** | |
+| 3 · verify | 1 triage per failure | ~44k each | 5 min for the run itself |
+| 4 · file | writing the proposals | ~50k | |
+
+So **1.95M for the bank itself**, and about 2.2M if you delegate triage for all six failures.
+That is roughly **34k tokens per scenario** banked, implemented and verified — and it bought 52
+working browser tests and 6 real defects on an app that already had a passing test suite.
+
+**Wall clock is about 90 minutes, not the sum.** Everything within a turn runs in parallel, so
+you wait for the slowest agent, not all of them. Turn 2's six implementers ran concurrently.
+
+### Where the money goes
+
+**Turn 2 is over half of it.** Writing Page Objects and step definitions means reading real
+components and driving a real browser, repeatedly. The two most expensive implementers (250k and
+219k) were the ones with the most scenarios and the most app interaction.
+
+**The app crawl is the priciest single scout** — 133k tokens and 26 minutes, because it actually
+operates the application. It is also the mode that found two of the six defects by watching the
+app misbehave, so it tends to earn its keep.
+
+### The second cycle is much cheaper
+
+The expensive part is building the bank, and you only do that once. On later runs:
+
+- discovery dedups against the bank **and** your existing suites, so scouts return only what is
+  genuinely new
+- turn 2 implements only the new drafts — usually a handful after a feature, not 45
+- turn 3 runs the whole bank for ~6 minutes of wall clock and almost no tokens, because running
+  Playwright is not a model operation
+
+Budget the first cycle as a one-off investment in coverage, and subsequent cycles as roughly
+proportional to how much you shipped since the last one.
+
+### Spending less
+
+- **Scope it**: `/tddbanking:discover payments` runs the whole cycle against one capability.
+- **Skip the crawl** if your app is hard to drive or your docs are good — story-driven and
+  defect-driven cost about a third of it between them and need no running app.
+- **Let turn 2 run long rather than wide** on a small bank; the parallel fan-out is what makes
+  it fast, not what makes it cheap.
+
+### The caveat
+
+These are numbers from **one run against one mid-sized app** — 15 capabilities, ~11 routes, 4
+roles, an existing Playwright suite. A larger surface costs more, and an app that is awkward to
+drive costs more again. Treat the shape as reliable and the absolute figures as an order of
+magnitude.
+
+---
+
 ## Install
 
 ```bash
