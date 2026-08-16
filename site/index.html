@@ -1,0 +1,671 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+<meta charset="utf-8">
+<script>
+  /* Set before first paint: without JS the carousel degrades to a plain
+     vertical stack, and nothing on the page is ever hidden from a reader
+     who cannot get it back. */
+  document.documentElement.className =
+    document.documentElement.className.replace(/\bno-js\b/, '') + ' js';
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>tddbanking — browser tests for what a user actually does</title>
+<meta name="description" content="A Claude Code plugin that finds the user-facing behaviour nothing covers, writes browser tests for all of it, runs them, and files whatever is broken as ready-to-implement change proposals.">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="canonical" href="https://tddbanking.deepspring.co/">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://tddbanking.deepspring.co/">
+<meta property="og:title" content="tddbanking">
+<meta property="og:description" content="Your team writes backend tests. Nobody tests what a user actually does in a browser.">
+<meta name="theme-color" content="#ffffff">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="nav" id="nav">
+  <div class="nav-inner">
+    <a class="wordmark" href="#top" aria-label="tddbanking, home">
+      <svg class="mark" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+        <rect width="32" height="32" rx="7.6" fill="var(--accent)"/>
+        <rect x="8" y="8.4" width="16" height="3.6" rx="1.8" fill="#fff" opacity=".38"/>
+        <rect x="8" y="14.2" width="16" height="3.6" rx="1.8" fill="#fff"/>
+        <rect x="8" y="20" width="16" height="3.6" rx="1.8" fill="#fff"/>
+      </svg>
+      <span class="wordmark-text"><span class="wm-a">tdd</span><span class="wm-b">banking</span></span>
+    </a>
+    <nav class="nav-links" aria-label="Sections">
+      <a href="#loop">The cycle</a>
+      <a href="#modes">Discovery</a>
+      <a href="#proof">Results</a>
+      <a href="#costs">Cost</a>
+      <a href="#install">Install</a>
+    </nav>
+    <a class="btn btn-ghost nav-cta" href="https://github.com/DeepSpringAI/tddbanking" target="_blank" rel="noopener">
+      GitHub <span class="arrow" aria-hidden="true">↗</span>
+    </a>
+  </div>
+</header>
+
+<main id="main">
+
+  <!-- ───────────────────────────── hero ───────────────────────────── -->
+  <section class="hero" id="top">
+    <div class="wrap">
+      <p class="eyebrow reveal">A Claude Code plugin · v0.3.1 · MIT</p>
+      <h1 class="display reveal">Nobody tests what a&nbsp;user actually does in a&nbsp;browser.</h1>
+      <p class="lede reveal">
+        Your team writes backend tests. tddbanking closes the gap that leaves — and keeps it closed.
+        Point it at a web app and it finds the user-facing behaviour nothing covers, writes browser
+        tests for all of it, runs them, and hands whatever is broken to your spec tool as
+        ready-to-implement change proposals.
+      </p>
+      <p class="lede lede-dim reveal">Then you run it again next month, and it finds what your new features left untested.</p>
+
+      <div class="hero-actions reveal">
+        <a class="btn btn-primary" href="#install">Install</a>
+        <a class="btn btn-ghost" href="#loop">How it works</a>
+      </div>
+
+      <div class="hero-copy reveal">
+        <div class="copyline" data-copy="/plugin marketplace add DeepSpringAI/tddbanking">
+          <code><span class="sh">/plugin marketplace add</span> DeepSpringAI/tddbanking</code>
+          <button class="copybtn" type="button" aria-label="Copy install command">
+            <span class="copybtn-label">Copy</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ───────────────────────── the four turns ─────────────────────── -->
+  <section class="band" id="loop">
+    <div class="wrap">
+      <p class="eyebrow reveal">The cycle</p>
+      <h2 class="reveal">Four turns. Each one ends deliberately.</h2>
+      <p class="lede reveal">
+        So you can look at the result before the next begins. Turn 4 is terminal — you implement the
+        changes it filed, and a new round happens when you ask for one.
+      </p>
+
+      <div class="scrubber reveal" id="scrubber">
+        <div class="tabs" role="tablist" aria-label="The four turns">
+          <span class="tab-thumb" id="tabThumb" aria-hidden="true"></span>
+          <button class="tab" role="tab" id="tab-0" aria-controls="panel-0" aria-selected="true" tabindex="0">
+            <span class="tab-n">1</span><span class="tab-t">discover</span>
+          </button>
+          <button class="tab" role="tab" id="tab-1" aria-controls="panel-1" aria-selected="false" tabindex="-1">
+            <span class="tab-n">2</span><span class="tab-t">implement</span>
+          </button>
+          <button class="tab" role="tab" id="tab-2" aria-controls="panel-2" aria-selected="false" tabindex="-1">
+            <span class="tab-n">3</span><span class="tab-t">verify</span>
+          </button>
+          <button class="tab" role="tab" id="tab-3" aria-controls="panel-3" aria-selected="false" tabindex="-1">
+            <span class="tab-n">4</span><span class="tab-t">file</span>
+          </button>
+        </div>
+
+        <div class="viewport" id="viewport">
+          <div class="track" id="track">
+
+            <!-- 1 · discover -->
+            <article class="panel" role="tabpanel" id="panel-0" aria-labelledby="tab-0">
+              <div class="panel-text">
+                <h3>What should a user be able to do — and what covers it today?</h3>
+                <p>
+                  It reads your <em>existing</em> test suites first, so it looks for what is untested rather
+                  than what is merely unbanked. Then it hunts three ways at once, checks each candidate is
+                  actually <em>reachable</em> — that a test could really set it up — and banks what it finds.
+                </p>
+                <p class="note">Every scenario cites evidence: a route, a commit SHA, a <code>file:line</code>. No evidence, no scenario.</p>
+              </div>
+              <div class="panel-art">
+                <div class="card code-card">
+                  <div class="card-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="card-name">transfers.feature</span></div>
+<pre class="code"><span class="c-tag">@capability:transfers</span>
+<span class="c-kw">Feature:</span> Money transfers
+
+  <span class="c-cmt"># evidence: /transfers form, submit stays
+  # enabled during POST /api/transfers</span>
+  <span class="c-draft">@draft</span> <span class="c-tag">@from-crawl @priority:high</span>
+  <span class="c-kw">Scenario:</span> Submitting a transfer twice
+            does not send the money twice
+    <span class="c-kw">When</span> I submit a 50 EUR transfer twice
+    <span class="c-kw">Then</span> only one transfer is recorded</pre>
+                </div>
+                <p class="art-cap">A banked draft. No steps yet — but the intent is on the record.</p>
+              </div>
+            </article>
+
+            <!-- 2 · implement -->
+            <article class="panel" role="tabpanel" id="panel-1" aria-labelledby="tab-1">
+              <div class="panel-text">
+                <h3>Write browser tests for everything that has none.</h3>
+                <p>
+                  Page Objects and step definitions for <strong>everything</strong> reachable — one capability
+                  per agent, in parallel. Not a prioritised subset: the whole list. This is the step teams
+                  skip, and skipping it is how a test suite ends up 12% done and abandoned.
+                </p>
+                <p class="note">Drafts and live tests share one <code>.feature</code> file, so it reads as the complete intent of a capability with the untested parts visibly marked.</p>
+              </div>
+              <div class="panel-art">
+                <div class="card code-card">
+                  <div class="card-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="card-name">promote the scenario</span></div>
+<pre class="code"><span class="c-del">- <span class="c-draft">@draft</span> @from-crawl @priority:high</span><span class="c-add">+ @from-crawl @priority:high</span><span class="ln">  <span class="c-kw">Scenario:</span> Submitting a transfer twice</span><span class="ln">            does not send the money twice</span><span class="ln">    <span class="c-kw">When</span> I submit a 50 EUR transfer twice</span><span class="ln">    <span class="c-kw">Then</span> only one transfer is recorded</span></pre>
+                </div>
+                <p class="art-cap"><strong>Promoting a scenario is deleting one tag</strong> — a one-line diff any reviewer can read.</p>
+                <div class="meter" aria-hidden="true">
+                  <div class="meter-head"><span>Coverage</span><span class="meter-val" id="meterVal">90%</span></div>
+                  <div class="meter-rail"><span class="meter-fill" id="meterFill"></span></div>
+                  <div class="meter-foot">live ÷ (live + draft)</div>
+                </div>
+              </div>
+            </article>
+
+            <!-- 3 · verify -->
+            <article class="panel" role="tabpanel" id="panel-2" aria-labelledby="tab-2">
+              <div class="panel-text">
+                <h3>Run them all. Give every failure a verdict.</h3>
+                <p>
+                  <strong>Defect</strong>, <strong>flake</strong>, or <strong>stale scenario</strong> — each with
+                  a citation. A red browser test means three unrelated things, and “probably flaky, re-run it”
+                  is how suites die.
+                </p>
+                <p class="note">What it never does is edit an assertion to match what the app currently does. That converts a discovered defect into permanent blindness.</p>
+              </div>
+              <div class="panel-art">
+                <div class="card code-card">
+                  <div class="card-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="card-name">playwright run</span></div>
+<pre class="code"><span class="c-pass">  52 passed</span>  <span class="c-fail">6 failed</span>  <span class="c-dim">6.4m</span>
+
+<span class="c-fail">  ✗</span> Non-consenting HCP is not named
+    <span class="c-dim">→ report printed her name anyway</span>
+<span class="c-fail">  ✗</span> Compliance Officer cannot cancel
+    <span class="c-dim">→ endpoint accepted the request</span></pre>
+                </div>
+                <div class="chips">
+                  <span class="chip chip-fail">defect</span>
+                  <span class="chip chip-warn">flake</span>
+                  <span class="chip chip-dim">stale scenario</span>
+                </div>
+              </div>
+            </article>
+
+            <!-- 4 · file -->
+            <article class="panel" role="tabpanel" id="panel-3" aria-labelledby="tab-3">
+              <div class="panel-text">
+                <h3>Every proven defect leaves as a change proposal.</h3>
+                <p>
+                  Grouped by cause and filed into <a href="https://github.com/Fission-AI/OpenSpec" target="_blank" rel="noopener">OpenSpec</a>
+                  as a proposal, delta specs and a task-by-task plan — each one shipping its failing scenario
+                  as the acceptance test. Then it stops. You implement the changes; a new round happens when
+                  you ask for one.
+                </p>
+                <p class="note">Proven bugs stay tagged <code>@known-defect</code> so they don't block unrelated work — while the full run keeps them visible. The day one passes, the fix landed.</p>
+              </div>
+              <div class="panel-art">
+                <div class="card spec-card">
+                  <div class="spec-head">
+                    <span class="spec-kind">OpenSpec change</span>
+                    <span class="spec-id">fix-disclosure-consent</span>
+                  </div>
+                  <ul class="spec-list">
+                    <li><span class="tick" aria-hidden="true">✓</span> proposal.md</li>
+                    <li><span class="tick" aria-hidden="true">✓</span> specs/disclosure/spec.md <em>(delta)</em></li>
+                    <li><span class="tick" aria-hidden="true">✓</span> tasks.md — 6 tasks</li>
+                    <li><span class="tick" aria-hidden="true">✓</span> acceptance: the failing scenario</li>
+                  </ul>
+                </div>
+                <p class="art-cap">The loop ends here — on purpose.</p>
+              </div>
+            </article>
+
+          </div>
+        </div>
+
+        <p class="scrub-hint" id="scrubHint">
+          <span class="hint-grab" aria-hidden="true"></span>
+          Drag the panel — or throw it.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─────────────────────── three discovery modes ─────────────────── -->
+  <section class="band band-alt" id="modes">
+    <div class="wrap">
+      <p class="eyebrow reveal">Discovery</p>
+      <h2 class="reveal">Three ways it finds what you're missing.</h2>
+      <p class="lede reveal">
+        They run in parallel, each blind to the others — which is why the union is bigger than any of them.
+        In the first real run, <strong>88% of scenarios came from exactly one mode</strong>.
+      </p>
+
+      <div class="grid-3">
+        <article class="card mode reveal">
+          <h3>App crawl</h3>
+          <p>Drives your running app: every route, form, control, error state and permission boundary. Finds what nobody wrote down.</p>
+          <p class="mode-tag">This is the one that catches the app misbehaving in front of you.</p>
+        </article>
+        <article class="card mode reveal">
+          <h3>Story-driven</h3>
+          <p>Reads your README, PRDs, release notes, business rules and handoff docs, extracts what they <em>promise</em>, then checks each promise against the code.</p>
+          <p class="mode-tag">Finds features that were documented, agreed, and never actually built.</p>
+        </article>
+        <article class="card mode reveal">
+          <h3>Defect-driven</h3>
+          <p>Mines your git history and issue tracker for bugs you already fixed and turns each into a regression test.</p>
+          <p class="mode-tag">The most scenarios, the fewest new findings — this is insurance, not detection.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ───────────────────────────── proof ───────────────────────────── -->
+  <section class="band" id="proof">
+    <div class="wrap">
+      <p class="eyebrow reveal">Results</p>
+      <h2 class="reveal">What it found the first time we ran it.</h2>
+      <p class="lede reveal">
+        On a real pharma congress platform with an existing Playwright suite of 59 tests and full
+        backend coverage.
+      </p>
+
+      <div class="stats reveal">
+        <div class="stat">
+          <div class="stat-n">12% <span class="stat-arrow" aria-hidden="true">→</span> 90%</div>
+          <div class="stat-l">Coverage, in one cycle — 52 of 58 scenarios live</div>
+        </div>
+        <div class="stat">
+          <div class="stat-n">52 <span class="stat-sub">pass</span> · 6 <span class="stat-sub">fail</span></div>
+          <div class="stat-l">Full run, 6.4 minutes</div>
+        </div>
+        <div class="stat">
+          <div class="stat-n">6 defects</div>
+          <div class="stat-l">Real, filed as 6 OpenSpec changes</div>
+        </div>
+      </div>
+
+      <p class="lede lede-tight reveal">The defects were not edge cases:</p>
+
+      <div class="findings">
+        <article class="finding reveal">
+          <h3>A doctor who declined disclosure consent was published by name.</h3>
+          <p>
+            The system classified her correctly as an aggregate disclosure — and the report printed her
+            name next to her transfer of value anyway. Every non-consented HCP in every report, in a
+            product whose entire purpose is regulatory disclosure.
+          </p>
+        </article>
+        <article class="finding reveal">
+          <h3>A Compliance Officer could cancel approved nominations and create new ones.</h3>
+          <p>Role checks gated <em>pages</em>; nothing gated <em>actions</em>, so the endpoints accepted anyone.</p>
+        </article>
+        <article class="finding reveal">
+          <h3>A documented approval gate did not exist.</h3>
+          <p>
+            Four documents promised bookings were only invitation-ready once registration, hotel and flight
+            were confirmed. The code checked one unrelated flag — and the component statuses had no update
+            path at all, so they could never be confirmed. Story-driven mode found this by reading the docs;
+            no crawl could have.
+          </p>
+        </article>
+      </div>
+
+      <p class="aside reveal">
+        It also found six scenarios that <em>cannot be tested</em> because the fixtures don't exist, and filed
+        those as work too — including that every seeded congress had a nomination deadline in the past, so a
+        demo of the product's core action would have failed.
+      </p>
+    </div>
+  </section>
+
+  <!-- ───────────────────────────── cost ───────────────────────────── -->
+  <section class="band band-alt" id="costs">
+    <div class="wrap">
+      <p class="eyebrow reveal">Cost</p>
+      <h2 class="reveal">It is not cheap, and it is front-loaded.</h2>
+      <p class="lede reveal">
+        The honest answer, measured from the run above rather than estimated. The expensive part is
+        building the bank, and you only do that once.
+      </p>
+
+      <div class="stats reveal">
+        <div class="stat">
+          <div class="stat-n">~861 <span class="stat-sub">tokens</span></div>
+          <div class="stat-l">
+            Added to every session, whether you use it or not — the plugin's whole descriptive surface.
+            Installing it does not tax your normal work.
+          </div>
+        </div>
+        <div class="stat">
+          <div class="stat-n">~1.95M <span class="stat-sub">tokens</span></div>
+          <div class="stat-l">
+            One full cycle on a 58-scenario bank — roughly 34k per scenario banked, implemented and
+            verified
+          </div>
+        </div>
+        <div class="stat">
+          <div class="stat-n">~90 <span class="stat-sub">min</span></div>
+          <div class="stat-l">
+            Wall clock, <em>not</em> the sum — everything within a turn runs in parallel, so you wait
+            for the slowest agent
+          </div>
+        </div>
+      </div>
+
+      <div class="table-wrap reveal">
+        <table class="ledger">
+          <caption>Measured agent totals from that run.</caption>
+          <thead>
+            <tr>
+              <th scope="col">Turn</th>
+              <th scope="col" class="num">Agents</th>
+              <th scope="col" class="num">Tokens</th>
+              <th scope="col">Longest agent</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row">1 · discover <span class="row-sub">scouts</span></th>
+              <td class="num">3</td>
+              <td class="num">308k</td>
+              <td>26 min <span class="row-sub">app crawl</span></td>
+            </tr>
+            <tr>
+              <th scope="row">1 · reachability <span class="row-sub">probes</span></th>
+              <td class="num">5</td>
+              <td class="num">585k</td>
+              <td>12 min</td>
+            </tr>
+            <tr>
+              <th scope="row">2 · implement <span class="row-sub">implementers</span></th>
+              <td class="num">6</td>
+              <td class="num">1.05M</td>
+              <td>36 min</td>
+            </tr>
+            <tr class="row-total">
+              <th scope="row">Subtotal — the bank itself</th>
+              <td class="num">14</td>
+              <td class="num">1.95M</td>
+              <td></td>
+            </tr>
+            <tr>
+              <th scope="row">3 · verify <span class="row-sub">one triage per failure</span></th>
+              <td class="num">—</td>
+              <td class="num">~44k each</td>
+              <td>5 min <span class="row-sub">the run itself</span></td>
+            </tr>
+            <tr>
+              <th scope="row">4 · file <span class="row-sub">writing the proposals</span></th>
+              <td class="num">—</td>
+              <td class="num">~50k</td>
+              <td></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="art-cap reveal table-note">
+        About <strong>2.2M</strong> if you delegate triage for all six failures — and it bought 52
+        working browser tests and 6 real defects on an app that already had a passing test suite.
+      </p>
+
+      <div class="grid-3">
+        <article class="card mode reveal">
+          <h3>Where the money goes</h3>
+          <p>
+            <strong>Turn 2 is over half of it.</strong> Writing Page Objects and step definitions means
+            reading real components and driving a real browser, repeatedly. The two priciest
+            implementers — 250k and 219k — had the most scenarios and the most app interaction.
+          </p>
+          <p class="mode-tag">
+            The app crawl is the priciest single scout at 133k and 26 minutes, because it actually
+            operates the application. It also found two of the six defects, so it tends to earn its keep.
+          </p>
+        </article>
+
+        <article class="card mode reveal">
+          <h3>The second cycle is much cheaper</h3>
+          <p>Discovery dedups against the bank <em>and</em> your existing suites, so scouts return only what is genuinely new. Turn 2 implements only the new drafts — usually a handful after a feature, not 45.</p>
+          <p class="mode-tag">
+            Turn 3 runs the whole bank in about 6 minutes of wall clock and almost no tokens: running
+            Playwright is not a model operation.
+          </p>
+        </article>
+
+        <article class="card mode reveal">
+          <h3>Spending less</h3>
+          <ul class="ticks ticks-tight">
+            <li><strong>Scope it.</strong> <code>/tddbanking:discover payments</code> runs the whole cycle against one capability.</li>
+            <li><strong>Skip the crawl</strong> if your app is hard to drive or your docs are good — story-driven and defect-driven cost about a third of it between them, and need no running app.</li>
+            <li><strong>Let turn 2 run long rather than wide</strong> on a small bank. The parallel fan-out is what makes it fast, not what makes it cheap.</li>
+          </ul>
+        </article>
+      </div>
+
+      <p class="aside reveal">
+        These are numbers from <strong>one run against one mid-sized app</strong> — 15 capabilities,
+        ~11 routes, 4 roles, an existing Playwright suite. A larger surface costs more, and an app that
+        is awkward to drive costs more again. Treat the shape as reliable and the absolute figures as
+        an order of magnitude.
+      </p>
+    </div>
+  </section>
+
+  <!-- ─────────────────────── how the bank works ────────────────────── -->
+  <section class="band" id="bank">
+    <div class="wrap">
+      <p class="eyebrow reveal">The bank</p>
+      <h2 class="reveal">One file per capability. The untested parts are visibly marked.</h2>
+
+      <div class="split">
+        <div class="split-text">
+          <p class="lede reveal">
+            Scenarios live in Gherkin. Drafts — <code>@draft</code>, not yet implemented — and live tests share
+            one <code>.feature</code> file, so a file reads as the complete intent of a capability.
+          </p>
+          <ul class="ticks reveal">
+            <li>Coverage is <strong>live ÷ (live + draft)</strong>, computed from the tags.</li>
+            <li>Promoting a scenario is <strong>deleting one tag</strong>.</li>
+            <li>Every scenario cites evidence. <strong>No evidence, no scenario</strong> — a bank containing invented tests stops being trusted, and that is unrecoverable.</li>
+          </ul>
+        </div>
+        <div class="split-art reveal">
+          <div class="card code-card">
+            <div class="card-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="card-name">transfers.feature</span></div>
+<pre class="code"><span class="c-tag">@capability:transfers</span>
+<span class="c-kw">Feature:</span> Money transfers
+
+  <span class="c-tag">@smoke</span>
+  <span class="c-kw">Scenario:</span> Transferring within balance
+            moves the money
+    <span class="c-kw">When</span> I transfer 50 EUR to <span class="c-str">"bob@example.com"</span>
+    <span class="c-kw">Then</span> my balance decreases by 50 EUR
+
+  <span class="c-cmt"># evidence: /transfers form, submit stays
+  # enabled during POST /api/transfers</span>
+  <span class="c-draft">@draft</span> <span class="c-tag">@from-crawl @priority:high</span>
+  <span class="c-kw">Scenario:</span> Submitting a transfer twice
+            does not send the money twice
+    <span class="c-kw">When</span> I submit a 50 EUR transfer twice
+    <span class="c-kw">Then</span> only one transfer is recorded</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─────────────────────── it doesn't invent this ────────────────── -->
+  <section class="band band-alt" id="built-on">
+    <div class="wrap">
+      <p class="eyebrow reveal">Credit</p>
+      <h2 class="reveal">It doesn't invent any of this. It wires together three things that already work.</h2>
+      <p class="lede reveal">
+        Each of these is good on its own, and each solves one part of the problem. The plugin's
+        contribution is the handoffs between them, and the discipline to run all four steps instead of
+        stopping after the interesting one. Nothing is vendored — all three are referenced by name so they
+        stay current.
+      </p>
+
+      <div class="grid-3">
+        <article class="card dep reveal">
+          <h3><a href="https://github.com/mattpocock/skills" target="_blank" rel="noopener">The <code>tdd</code> skill <span class="arrow" aria-hidden="true">↗</span></a></h3>
+          <p class="dep-by">by Matt Pocock</p>
+          <p>
+            The red/green discipline, and the reason the tests are worth keeping. It defines what a good test
+            is, where tests belong — <em>seams</em>, the public boundary you observe behaviour at — and the
+            anti-patterns that quietly ruin a suite. tddbanking defers to it rather than restating it.
+          </p>
+        </article>
+        <article class="card dep reveal">
+          <h3><a href="https://github.com/Fission-AI/OpenSpec" target="_blank" rel="noopener">OpenSpec <span class="arrow" aria-hidden="true">↗</span></a></h3>
+          <p class="dep-by">Fission AI</p>
+          <p>
+            Turns a rough requirement into a real specification — proposal, delta specs, design, and a
+            task-by-task implementation plan. Every proven bug leaves the loop as an OpenSpec change, not as
+            a bug report someone has to re-specify.
+          </p>
+        </article>
+        <article class="card dep reveal">
+          <h3><a href="https://github.com/vitalets/playwright-bdd" target="_blank" rel="noopener">playwright-bdd <span class="arrow" aria-hidden="true">↗</span></a></h3>
+          <p class="dep-by">by Vitaliy Potapov</p>
+          <p>
+            Gherkin feature files compiled into Playwright specs. Thin step definitions, locators in Page
+            Objects. It is what makes a browser test readable as a requirement instead of a script — which
+            matters, because these tests double as the acceptance criteria handed to OpenSpec.
+          </p>
+        </article>
+      </div>
+      <p class="aside reveal">If you already use any of these, this plugin is the sequencing you were going to write yourself.</p>
+    </div>
+  </section>
+
+  <!-- ────────────────── two things worth knowing ───────────────────── -->
+  <section class="band" id="knowing">
+    <div class="wrap">
+      <p class="eyebrow reveal">Two things worth knowing</p>
+      <div class="grid-2">
+        <article class="know reveal">
+          <h3>A green test on the first run is a success, not a failure of TDD.</h3>
+          <p>
+            Your app already exists, so most scenarios document behaviour that already works — that is
+            coverage gained. A red one is a bug you just found.
+          </p>
+        </article>
+        <article class="know reveal">
+          <h3>No turn tells you what to do next within its own scope.</h3>
+          <p>
+            Earlier versions ranked drafts by priority, and the first real run implemented 8 of 58 and felt
+            finished. A shortlist reads as permission to stop. Each turn's contract is now completeness.
+          </p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ───────────────────────────── install ─────────────────────────── -->
+  <section class="band band-alt" id="install">
+    <div class="wrap">
+      <p class="eyebrow reveal">Install</p>
+      <h2 class="reveal">Two commands to add it. Two more to start.</h2>
+
+      <div class="install-grid">
+        <div class="install-step reveal">
+          <p class="step-label">1 · Add the plugin, once</p>
+          <div class="copyline" data-copy="/plugin marketplace add DeepSpringAI/tddbanking">
+            <code><span class="sh">/plugin marketplace add</span> DeepSpringAI/tddbanking</code>
+            <button class="copybtn" type="button" aria-label="Copy: plugin marketplace add"><span class="copybtn-label">Copy</span></button>
+          </div>
+          <div class="copyline" data-copy="/plugin install tddbanking@tddbanking">
+            <code><span class="sh">/plugin install</span> tddbanking@tddbanking</code>
+            <button class="copybtn" type="button" aria-label="Copy: plugin install"><span class="copybtn-label">Copy</span></button>
+          </div>
+        </div>
+
+        <div class="install-step reveal">
+          <p class="step-label">2 · In the repo of the app you want covered</p>
+          <div class="copyline" data-copy="/tddbanking:init">
+            <code><span class="sh">/tddbanking:init</span></code>
+            <button class="copybtn" type="button" aria-label="Copy: tddbanking init"><span class="copybtn-label">Copy</span></button>
+          </div>
+          <p class="copyline-note">One-time: playwright-bdd, config, scripts, CI workflow.</p>
+          <div class="copyline" data-copy="/tddbanking:discover">
+            <code><span class="sh">/tddbanking:discover</span></code>
+            <button class="copybtn" type="button" aria-label="Copy: tddbanking discover"><span class="copybtn-label">Copy</span></button>
+          </div>
+          <p class="copyline-note">Turn 1 — it tells you what to run next.</p>
+        </div>
+      </div>
+
+      <div class="reqs">
+        <div class="req reveal">
+          <h3>Requirements</h3>
+          <p>
+            Node, and a web app you can run locally.
+            <a href="https://github.com/Fission-AI/OpenSpec" target="_blank" rel="noopener">OpenSpec</a>
+            (<code>npm i -g @fission-ai/openspec</code>) is needed only by turn 4. The <code>tdd</code> skill
+            and <code>webapp-testing</code> are used when present and reported as absent when not.
+          </p>
+        </div>
+        <div class="req req-warn reveal">
+          <h3><span class="warn-mark" aria-hidden="true">!</span> Before the crawl writes anything</h3>
+          <p>
+            It asks you to confirm the target is disposable and its outbound email is sandboxed. Crawling
+            means <em>doing</em> things — submitting forms, cancelling records. Point it at a seeded local
+            instance, never staging.
+          </p>
+        </div>
+      </div>
+
+      <p class="commands reveal">
+        Commands: <code>init</code>, <code>discover</code>, <code>implement</code>, <code>verify</code>,
+        <code>file</code>, plus read-only <code>status</code>.
+      </p>
+    </div>
+  </section>
+
+  <!-- ───────────────────────────── closer ──────────────────────────── -->
+  <section class="closer">
+    <div class="wrap">
+      <h2 class="reveal">Run it again after your next feature, and it picks up from the bank it already built.</h2>
+      <div class="hero-actions reveal">
+        <a class="btn btn-primary" href="https://github.com/DeepSpringAI/tddbanking" target="_blank" rel="noopener">
+          Get it on GitHub <span class="arrow" aria-hidden="true">↗</span>
+        </a>
+        <a class="btn btn-ghost" href="https://github.com/DeepSpringAI/tddbanking/blob/main/DESIGN.md" target="_blank" rel="noopener">
+          Read DESIGN.md <span class="arrow" aria-hidden="true">↗</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="footer">
+  <div class="wrap footer-inner">
+    <div class="footer-brand">
+      <svg class="mark mark-sm" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+        <rect width="32" height="32" rx="7.6" fill="var(--accent)"/>
+        <rect x="8" y="8.4" width="16" height="3.6" rx="1.8" fill="#fff" opacity=".38"/>
+        <rect x="8" y="14.2" width="16" height="3.6" rx="1.8" fill="#fff"/>
+        <rect x="8" y="20" width="16" height="3.6" rx="1.8" fill="#fff"/>
+      </svg>
+      <span><span class="wm-a">tdd</span><span class="wm-b">banking</span> · v0.3.1</span>
+    </div>
+    <p class="footer-legal">
+      MIT. OpenSpec is MIT; playwright-bdd is MIT; <code>webapp-testing</code> is Apache-2.0; the
+      <code>tdd</code> skill is Matt Pocock's and states no licence — none of them are redistributed here.
+    </p>
+    <p class="footer-links">
+      <a href="https://github.com/DeepSpringAI/tddbanking" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://github.com/DeepSpringAI/tddbanking/blob/main/DESIGN.md" target="_blank" rel="noopener">DESIGN.md</a>
+      <a href="https://github.com/DeepSpringAI" target="_blank" rel="noopener">DeepSpring</a>
+    </p>
+  </div>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
