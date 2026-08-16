@@ -89,6 +89,7 @@ so the scenario generates reusable steps rather than single-purpose ones. Write
 Then, as your final lines and in exactly this form:
 
 ```
+SKILLS: webapp-testing loaded | MISSING | not needed for this modality
 CONSIDERED: <how many behaviours you assessed>
 RETURNED: <how many candidates you are returning>
 DROPPED: <how many you discarded>

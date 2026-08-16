@@ -16,12 +16,8 @@ Before writing any test code, do both of these:
    makes a test worth keeping decides whether your output is an asset or noise, and it is the
    standard your work will be judged against.
 
-   If the Skill tool has no `tdd`, say so in your report. It is a separate skill this plugin
-   does not ship, and the caller needs to know you worked without it. Only then fall back on
-   this reduced substitute: never assert through a side channel (reading the API to check a
-   browser outcome passes while the screen is broken — use the API for preconditions only), and
-   never take an expected value from the running application (it comes from the scenario and the
-   document it cites).
+   If the Skill tool has no `tdd`, record `tdd MISSING` in your report and read
+   "Working without the tdd skill" at the end of this file before continuing.
 
 Declarative scenarios, one behaviour each, locators only in Page Objects.
 
@@ -63,6 +59,7 @@ genuinely wrong, say so explicitly and cite the intentional change that made it 
 ## What you return
 
 ```
+SKILLS: tdd loaded | tdd MISSING
 CAPABILITY: <name>
 GREEN:   <n>  <one line per scenario>
 RED:     <n>  <one line per scenario, no verdict — turn 3 decides>
@@ -70,6 +67,22 @@ BLOCKED: <n>  <one line per scenario, with the missing fixture>
 FILES: <the paths you created or changed>
 ```
 
+Report `SKILLS` honestly. An agent that quietly skipped a skill produces output identical to
+one that loaded it, so without that line nobody can tell, and a regression is invisible.
+
 Then one line: `COMPLETE: yes | no — <if no, which scenarios and why>`.
 
 No test output, no traces, no screenshots. Your caller is merging many of you.
+
+
+## Working without the `tdd` skill
+
+Read this **only** if the Skill tool had no `tdd` and you recorded it missing. These two rules
+are a reduced substitute for the real thing, not a summary of it — you are working below the
+standard this turn assumes, and the caller has been told.
+
+- **Never assert through a side channel.** Reading the API to check a browser outcome passes
+  while the screen is broken. The API establishes preconditions; the interface is where
+  outcomes are observed.
+- **Never take an expected value from the running application.** It comes from the scenario and
+  the document the scenario cites.

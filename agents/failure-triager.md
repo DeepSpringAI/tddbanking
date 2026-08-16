@@ -36,6 +36,7 @@ change was intentional.
 ## What you return
 
 ```
+SKILLS: webapp-testing loaded | MISSING | not needed for this failure
 VERDICT: defect | flake | stale
 SCENARIO: <name>
 REASONING: <two sentences, the evidence that decided it>

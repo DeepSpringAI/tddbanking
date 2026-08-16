@@ -229,9 +229,14 @@ built from — it **invokes** them, so they have to be installed. Turns 1–3 wo
 them; the last two do not.
 
 ```bash
-npm i -g @fission-ai/openspec     # turns 4 and 5
-openspec init                     # once, in your project
+npm i -g @fission-ai/openspec        # the CLI
+openspec init --tools claude         # once, in YOUR project
 ```
+
+Note what the second command does, because it is easy to miss: **`openspec init` is what creates
+the `openspec-*` skills**, generating them into that project's `.claude/skills/`. They are
+project-scoped, not global — installing the CLI alone gives you no skills, and turns 4 and 5
+will report them missing.
 
 The **`tdd` skill** is needed by turn 5 and improves turn 2. It is a personal Claude Code skill
 this plugin does not ship — get it from

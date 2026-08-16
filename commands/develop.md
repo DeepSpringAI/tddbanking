@@ -16,6 +16,10 @@ Scope: $ARGUMENTS — if empty, every open change in `openspec/changes/`.
 
 - **`openspec list --json`** — there must be changes to develop. If `root.source` is
   `"implicit"`, turn 4 never ran here; stop.
+- **Invoke the Skill tool with `openspec-apply-change`.** If it is missing, the fix is
+  `openspec init --tools claude` in this project — those skills are generated per project into
+  `.claude/skills/`, so a global CLI install does not provide them. Say that rather than
+  suggesting another `npm i`, and stop.
 - **Invoke the Skill tool with `tdd`.** This turn is governed by it. If it is absent, say so
   plainly and stop — this is development against a specification, and running it without the
   discipline it assumes is how you get code that passes one scenario and breaks two others.

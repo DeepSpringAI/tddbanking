@@ -45,6 +45,7 @@ Do not refactor beyond what the change needs — that belongs to review.
 ## What you return
 
 ```
+SKILLS: openspec-apply-change loaded | MISSING; tdd loaded | MISSING
 CHANGE: <name>
 SCENARIOS GREEN:  <the ones that now pass>
 SCENARIOS STILL RED: <any, with why>
@@ -52,6 +53,9 @@ MODIFIED: <application files you changed>
 TASKS: <n of m checked off>
 FULL BANK: <pass/fail counts after your change>
 ```
+
+Report `SKILLS` honestly. An agent that quietly skipped a skill produces output identical to
+one that loaded it, so without that line nobody can tell, and a regression is invisible.
 
 Then one line: `COMPLETE: yes | no — <if no, what is blocking>`.
 
