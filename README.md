@@ -1,35 +1,158 @@
 # tddbanking
 
-A Claude Code plugin that grows a **bank** of browser-verified user scenarios.
+**Your team writes backend tests. Nobody tests what a user actually does in a browser.**
 
-Backend unit tests are usually covered — coders write them as they go. What rots is the other
-question: **does the thing actually work for a person in a browser?** tddbanking builds and
-maintains the answer as an asset that only grows.
+tddbanking is a Claude Code plugin that closes that gap and keeps it closed. Point it at a web
+app and it finds the user-facing behaviour nothing covers, writes browser tests for all of it,
+runs them, and hands whatever is broken to a spec tool as ready-to-implement change proposals.
 
-Tests are [playwright-bdd](https://github.com/vitalets/playwright-bdd) — Gherkin feature files
-compiled by `bddgen` into Playwright specs, thin step definitions, locators in Page Objects.
+Then you run it again next month and it finds what your new features left untested.
 
-## The idea
+---
 
-Two populations of scenarios, one corpus:
+## It doesn't invent any of this — it wires together three things that already work
 
-- **Draft** — a behavior a user should have. Tagged `@draft`. No steps yet.
-- **Live** — implemented, running in a browser on every CI run.
+That is the whole idea. Each of these is good on its own, and each solves one part of the
+problem. The plugin's contribution is the handoffs between them, and the discipline to run all
+four steps instead of stopping after the interesting one.
+
+**[The `tdd` skill](https://github.com/mattpocock/skills) — by Matt Pocock**
+The red/green discipline, and the reason the tests are worth keeping. It defines what a good
+test is, where tests belong (*seams* — the public boundary you observe behaviour at), and the
+anti-patterns that quietly ruin a suite: tests coupled to implementation, tests that recompute
+their own expected value, tests written in bulk against imagined behaviour. tddbanking defers to
+it rather than restating it. Using it visibly improves what Claude produces; that is why it is
+here.
+
+**[OpenSpec](https://github.com/Fission-AI/OpenSpec)**
+Turns a rough requirement into a real specification — proposal, delta specs, design, and a
+task-by-task implementation plan. In practice it plans a change better than the built-in
+planning modes do. tddbanking uses it at the end: every proven bug leaves the loop as an
+OpenSpec change, not as a bug report someone has to re-specify.
+
+**[playwright-bdd](https://github.com/vitalets/playwright-bdd) — by Vitaliy Potapov**
+Gherkin feature files compiled into Playwright specs. Thin step definitions, locators in Page
+Objects. It is what makes a browser test readable as a requirement instead of a script, which
+matters because these tests double as the acceptance criteria handed to OpenSpec.
+The conventions follow [TestDino's playwright-bdd guide](https://testdino.com/blog/playwright-bdd).
+
+If you already use any of these, this plugin is the sequencing you were going to write yourself.
+
+---
+
+## The cycle
+
+Four turns. Each one ends deliberately so you can look at the result before the next begins.
 
 ```
-coverage(capability) = live / (live + draft)
+1  discover   what should a user be able to do, and what covers it today?
+2  implement  write browser tests for everything that has none
+3  verify     run them all; triage every failure
+4  file       turn each proven bug into an OpenSpec change proposal   ← loop ends
 ```
 
-Growing the bank means moving scenarios from draft to live. Both live in the same
-`.feature` file, so one file reads as the complete intent of a capability with the untested
-parts visibly marked:
+**1. Discover.** Reads your *existing* test suites first, so it looks for what is untested
+rather than what is merely unbanked. Then it hunts for uncovered behaviour three ways at once
+(below), checks each candidate is actually *reachable* — that a test could really set it up —
+and banks what it finds.
+
+**2. Implement.** Writes Page Objects and step definitions for **everything** reachable, one
+capability per agent, in parallel. Not a prioritised subset: the whole list. This is the step
+teams skip, and skipping it is how a test suite ends up 12% done and abandoned.
+
+**3. Verify.** Runs the bank and gives every failure a verdict — **defect**, **flake**, or
+**stale scenario** — with a citation. A red browser test means three unrelated things, and
+"probably flaky, re-run it" is how suites die.
+
+**4. File.** Every proven defect becomes an OpenSpec change proposal, grouped by cause. Then it
+stops. You implement the changes; a new round happens when you ask for one.
+
+Run it again after your next feature and it picks up from the bank it already built.
+
+---
+
+## Three ways it finds what you're missing
+
+Run in parallel, each blind to the others — which is why the union is bigger than any of them.
+In the first real run, **88% of scenarios came from exactly one mode**.
+
+**App crawl** — drives your running app: every route, form, control, error state and permission
+boundary. Finds what nobody wrote down. This is the one that catches the app misbehaving in
+front of you.
+
+**Story-driven** — reads your README, PRDs, release notes, business rules and handoff docs,
+extracts what they *promise*, then checks each promise against the code. Finds features that
+were documented, agreed, and never actually built.
+
+**Defect-driven** — mines your git history and issue tracker for bugs you already fixed and
+turns each into a regression test. Expect the most scenarios and the fewest new findings — this
+is insurance, not detection.
+
+---
+
+## What it found the first time we ran it
+
+On a real pharma congress platform with an existing Playwright suite (59 tests) and full backend
+coverage:
+
+| | |
+|---|---|
+| Coverage | **12% → 90%** in one cycle (52 of 58 scenarios live) |
+| Full run | 52 pass, 6 fail, 6.4 minutes |
+| Outcome | **6 real defects**, filed as 6 OpenSpec changes |
+
+The defects were not edge cases:
+
+- **A doctor who declined disclosure consent was published by name.** The system classified her
+  correctly as an aggregate disclosure — and the report printed her name next to her transfer of
+  value anyway. Every non-consented HCP in every report, in a product whose entire purpose is
+  regulatory disclosure.
+- **A Compliance Officer could cancel approved nominations and create new ones.** Role checks
+  gated *pages*; nothing gated *actions*, so the endpoints accepted anyone.
+- **A documented approval gate did not exist.** Four documents promised bookings were only
+  invitation-ready once registration, hotel and flight were confirmed. The code checked one
+  unrelated flag — and the component statuses had no update path at all, so they could never be
+  confirmed. Story-driven mode found this by reading the docs; no crawl could have.
+
+It also found six scenarios that *cannot be tested* because the fixtures don't exist, and filed
+those as work too — including that every seeded congress had a nomination deadline in the past,
+so a demo of the product's core action would have failed.
+
+---
+
+## Install
+
+```bash
+/plugin marketplace add DeepSpringAI/tddbanking
+/plugin install tddbanking@tddbanking
+```
+
+Then, in the repo of the app you want covered:
+
+```bash
+/tddbanking:init        # one-time: playwright-bdd, config, scripts, CI workflow
+/tddbanking:discover    # turn 1 — it tells you what to run next
+```
+
+**Requirements.** Node, and a web app you can run locally. [OpenSpec](https://github.com/Fission-AI/OpenSpec)
+(`npm i -g @fission-ai/openspec`) is needed only by turn 4. The `tdd` skill and `webapp-testing`
+are used when present and reported as absent when not.
+
+**Before the crawl writes anything**, it asks you to confirm the target is disposable and its
+outbound email is sandboxed. Crawling means *doing* things — submitting forms, cancelling
+records. Point it at a seeded local instance, never staging.
+
+---
+
+## How the bank works
+
+Scenarios live in Gherkin. Drafts (`@draft`, not yet implemented) and live tests share one
+`.feature` file, so a file reads as the complete intent of a capability with the untested parts
+visibly marked:
 
 ```gherkin
 @capability:transfers
 Feature: Money transfers
-
-  Background:
-    Given I am signed in as "alice@example.com"
 
   @smoke
   Scenario: Transferring within balance moves the money
@@ -39,224 +162,43 @@ Feature: Money transfers
   # evidence: /transfers form, submit stays enabled during POST /api/transfers
   @draft @from-crawl @priority:high
   Scenario: Submitting a transfer twice does not send the money twice
-    When I submit a 50 EUR transfer to "bob@example.com" twice in quick succession
+    When I submit a 50 EUR transfer twice in quick succession
     Then only one transfer is recorded
 ```
 
-`bddgen --tags "not @draft"` compiles only the live ones, so drafts never break the run.
-**Promoting a scenario is deleting one tag** — a one-line diff any reviewer can read.
+Coverage is `live / (live + draft)`, computed from the tags. **Promoting a scenario is deleting
+one tag** — a one-line diff any reviewer can read.
 
-There is no coverage spreadsheet. The feature corpus *is* the ledger; coverage is computed by
-parsing tags, because a hand-maintained table drifts within a week.
+**Every scenario cites evidence** — a route, a commit SHA, a `file:line`. No evidence, no
+scenario. A bank containing invented tests stops being trusted, and that is unrecoverable.
 
-## Install
+Proven bugs are tagged `@known-defect` with the change that will fix them: they stay out of the
+PR gate so they don't block unrelated work, while the full run keeps them visible. The day one
+passes, the fix landed.
 
-```
-/plugin marketplace add DeepSpringAI/tddbanking
-/plugin install tddbanking@tddbanking
-```
+---
 
-Then, in the repo of the app you want covered:
+## Two things worth knowing
 
-```
-/tddbanking:init
-```
+**A green test on the first run is a success, not a failure of TDD.** Your app already exists,
+so most scenarios document behaviour that already works — that is coverage gained. A red one is
+a bug you just found. What the loop never does is edit an assertion to match what the app
+currently does; that converts a discovered defect into permanent blindness.
 
-That installs playwright-bdd, writes the config and scripts, and proves the scaffold green
-before handing back.
+**No turn tells you what to do next within its own scope.** Earlier versions ranked drafts by
+priority, and the first real run implemented 8 of 58 and felt finished. A shortlist reads as
+permission to stop. Each turn's contract is now completeness.
 
-## The loop is four turns, and it ends
+---
 
-```
-init  (once)
-  │
-  ├─ 1  discover   find everything, probe reachability, report      ─┐ ends
-  ├─ 2  implement  take EVERY reachable draft live                  ─┤ ends
-  ├─ 3  verify     run everything, triage every failure             ─┤ ends
-  └─ 4  file       every finding becomes an OpenSpec proposal       ─┘ LOOP ENDS
-```
+## More
 
-| Command | Contract |
-|---|---|
-| `/tddbanking:init` | One-time scaffold: playwright-bdd, config, scripts, CI workflow |
-| `/tddbanking:discover` | Discover **and** probe reachability. Reports coverage |
-| `/tddbanking:implement` | Take **every** reachable draft live — not a selection |
-| `/tddbanking:verify` | Run and triage **everything** |
-| `/tddbanking:file` | Every finding becomes a change proposal. **Terminal** |
-| `/tddbanking:status` | Read-only coverage, safe between turns |
+- [DESIGN.md](DESIGN.md) — why it is shaped this way, including where it deliberately disagrees
+  with the `tdd` skill.
+- Commands: `init`, `discover`, `implement`, `verify`, `file`, plus read-only `status`.
+- Nothing is vendored. All three upstream projects are referenced by name so they stay current.
 
-Turn 4 is the end. You then implement the proposals; a new turn 1 happens only when you ask,
-because rediscovering the same gaps against unchanged code reproduces the same bank.
+## Licence
 
-**No turn recommends what to do next within its own scope.** That is deliberate. A ranked
-shortlist reads as permission to stop after the top few — which is exactly what happened the
-first time this was used in anger, where 8 of 58 scenarios felt like completion. Each turn's
-contract is now completeness: every reachable draft, every failure, every finding. Ranking
-still happens, but inside a turn, as scheduling you never see.
-
-**Turns fan out.** Discovery runs a scout per modality, an extractor per document class, and a
-reachability probe per candidate — all at once. Implementation runs one agent per capability,
-each in its own git worktree, because they all write code. Verification shards by capability
-with a distinct port per shard.
-
-Only `/tddbanking:file` needs the OpenSpec CLI.
-
-## Discovery finds what you didn't write down
-
-Turn 1 runs four kinds of agent in parallel. Each is blind to the others, which is why the
-union is larger than any of them: in the first real run, **88% of scenarios came from exactly
-one modality**.
-
-- **app-crawl** — drives the running app: routes, forms, error states, permission boundaries.
-  Highest yield for live misbehaviour; it watches the app do the wrong thing.
-- **defect-driven** — mines fixed bugs into `@regression` scenarios. Expect the most
-  scenarios and the fewest findings: those bugs are already fixed, so this is insurance
-  against recurrence rather than detection.
-- **promise-extractor** — one agent per document class (README, release notes, business
-  rules, handoff plans, ADRs, tickets), read closely rather than skimmed together.
-- **promise-auditor** — checks each extracted promise against the code and returns
-  `implemented` / `contradicted` / `absent`.
-
-That last pair is the sharpest tool here. It finds documented behaviour that was never built —
-things no browser crawl can reach, because there is nothing to crawl. In the first real run it
-found a gate that four documents describe and one line of code contradicts.
-
-**Every scenario cites a verifiable locator** — `file:line`, a commit SHA, or a route plus an
-observed control or response. Not a gesture at an area. Scouts report
-`CONSIDERED / RETURNED / DROPPED` so the drop rate is visible; a rule whose drops are invisible
-cannot be told apart from a rule that does nothing.
-
-## Reachability is checked before anything is banked
-
-A scenario nobody can set up looks like progress and is not.
-
-Turn 1 probes every candidate against the actual fixtures — seed data, factories, the running
-API, and conditional rendering that only appears for a subtype. Unreachable candidates are
-banked as `@blocked` with a comment naming the missing fixture **as a task**, excluded from
-turn 2's work list, and filed by turn 4 as fixture work.
-
-This exists because the first real run discovered blocked scenarios one at a time during
-implementation, at 25% of everything attempted. One seed addition often unblocks several
-scenarios at once.
-
-## A green first run is a success
-
-The app usually already exists, so implementing a draft has two honest outcomes:
-
-- **Green immediately** → backfill succeeded. The behavior works and is now guarded. This is
-  a win, not a TDD violation — you are documenting reality, not driving it.
-- **Red** → the bank found a defect. It becomes a finding, and `/tddbanking:file` turns it
-  into an OpenSpec change. Development makes it green.
-
-That second path is how the bank gives TDD its direction: **the bank says what is missing,
-OpenSpec says how it will be addressed, then the work happens.**
-
-The one thing the loop never does is edit a scenario's assertion to match what the app
-currently does. That converts a discovered defect into permanent blindness.
-
-## Every failure gets classified
-
-A red browser test is ambiguous, and unresolved ambiguity is the most common reason teams
-abandon an e2e suite. The **failure-triager** agent returns one of three verdicts:
-
-| Verdict | Meaning | Response |
-|---|---|---|
-| `defect` | The app is wrong | File a finding |
-| `flake` | The test is unreliable | Fix it, or `@quarantine` + `@quarantine-until:<date>` |
-| `stale` | The app changed on purpose | Update the scenario, citing the change |
-
-It is biased toward `defect`: calling a real bug "stale" edits away the finding permanently,
-while the reverse costs one human minute.
-
-## Designed against the three ways test banks die
-
-1. **Bloat and flake decay.** Growth is the goal, but a naive version becomes a 40-minute
-   flaky suite nobody trusts. Countered by dedup-on-add, `@quarantine` deadlines that
-   `/tddbanking:status` reports as debt, and a fast `@smoke` tier that gates PRs.
-2. **Gherkin theater.** `Given I click the button` is Playwright with extra ceremony.
-   Countered by declarative scenarios and zero locators outside Page Objects.
-3. **The bank as someone else's problem.** It lives in the app repo and runs on every PR —
-   `/tddbanking:init` writes the workflow — not in a detached QA project that drifts.
-
-## What it does not ship
-
-Three skills are referenced by name and none is vendored. The `openspec-*` skills are generated
-per project by the OpenSpec CLI and rewritten by `openspec update`; `webapp-testing` is
-Anthropic's, Apache-2.0; the `tdd` skill is a reference this loop defers to rather than
-restates.
-
-Each has one job. `webapp-testing` powers exploration and never produces a committed test —
-throwaway Python reconnaissance in, durable TypeScript Gherkin out. OpenSpec formalises
-findings into changes. The **`tdd` skill governs two things**: what makes a test worth keeping
-in turn 2, and the red-green development that follows turn 4 — where each filed change already
-ships with its failing scenario as the acceptance test, so the red half is written and agreed
-before anyone starts.
-
-Only OpenSpec is required, and only by turn 4. The others are used when present and reported
-as absent when not.
-
-## Layout
-
-```
-commands/    init, discover, audit, implement, verify, file
-skills/tddbanking/
-  SKILL.md              the coverage model, tags, the two modes
-  writing-scenarios.md  declarative Gherkin, thin steps, POM
-  triage.md             defect vs flake vs stale
-agents/      scenario-scout, browser-runner, failure-triager
-templates/   playwright.config.ts, BasePage, fixtures, example feature,
-             workflows/bank.yml (smoke on PRs, full bank nightly)
-```
-
-See [DESIGN.md](DESIGN.md) for the reasoning behind the model.
-
-## Status
-
-v0.2.1. The loop is prompt-level guidance — no hooks run on your machine.
-
-### What has been verified
-
-**v0.1.0 was run end-to-end against a real application** — a pharma congress platform with an
-existing Playwright suite (59 tests), two dev servers and role-based navigation. `init` merged
-into that config in 17 lines with both suites still resolving; three scouts returned 66
-evidenced candidates; a scenario went red, was triaged `defect` at high confidence, and became
-an OpenSpec change passing `--strict`. Most of this plugin's guardrails exist because that run
-broke without them.
-
-**v0.2.0's two new agents were validated against known answers** on the same application:
-
-- `promise-auditor` audited two documented promises and got both right — one `contradicted`,
-  independently locating the deciding line of code, and one `implemented`, correctly cleared.
-  That second result is the important one: the agent is biased toward `contradicted`, and the
-  risk was that it would flag everything.
-- `reachability-probe` judged three candidates and got all three right, twice more precisely
-  than the human analysis it was checked against. It also verified that a passing scenario was
-  not vacuously passing.
-
-Also verified: 13 tests covering the coverage parser, `plugin validate` and
-`plugin tag --dry-run` clean, a pristine clone installing and registering 6 commands and
-7 agents, and the installed copy reporting a real 58-scenario bank correctly.
-
-**v0.2.1's four-turn loop has now been run end-to-end** against that same application, in one
-sitting:
-
-- **Turn 1** probed all 51 drafts in parallel: 45 reachable, 6 blocked. It also corrected 13
-  scenarios pointed at unusable fixtures, caught one that would have passed vacuously, found a
-  missing reset hook, and overturned one of the human's own annotations.
-- **Turn 2** ran six implementers at once, each in its own worktree with its own app instance.
-  Coverage went **12% → 90%**. Five of six branches merged with no conflicts at all.
-- **Turn 3** ran the full bank: 52 passed, 6 failed in 6.4 minutes, every failure triaged as a
-  defect with a code citation.
-- **Turn 4** filed six OpenSpec changes, all passing `openspec validate --strict`.
-
-Six real defects, three of them new — including a pharma disclosure report naming doctors who
-declined consent.
-
-Everything in v0.2.1 exists because that run broke without it: parallel implementers contending
-over one app instance and killing each other's servers, two implementers defining the same step
-text, and a fixture-registry removal that turned out to be a migration rather than a template
-swap.
-
-## License
-
-MIT. OpenSpec is MIT; `webapp-testing` is Apache-2.0. Neither is redistributed here.
+MIT. OpenSpec is MIT; playwright-bdd is MIT; `webapp-testing` is Apache-2.0; the `tdd` skill is
+Matt Pocock's and states no licence — none of them are redistributed here.

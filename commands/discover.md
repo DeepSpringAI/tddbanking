@@ -14,6 +14,12 @@ Focus: $ARGUMENTS — if empty, cover the whole application.
 
 - Read the existing bank so discovery dedups against it rather than re-finding it:
   `node ${CLAUDE_PLUGIN_ROOT}/scripts/bank-stats.mjs --json`
+- **Read the repository's existing test suites too**, not just the bank. Find them (`tests/`,
+  `e2e/`, `*.spec.*`, `*.test.*`, whatever this project uses) and skim what behaviour they
+  already assert. A project with a real suite has already covered some of what discovery is
+  about to propose, and banking a duplicate wastes runtime forever while telling nobody
+  anything. Pass a summary of that coverage to every scout. This is the difference between
+  finding what is **untested** and finding what is merely **unbanked**.
 - The application must be running for the crawl and the reachability probe.
 - **Crawl consent.** Name the URL you are about to crawl and confirm with the user that the
   target is disposable and its outbound communication is sandboxed. Crawling writes: it
@@ -52,6 +58,10 @@ the same thing.
 
 - Two modalities finding the same behaviour is corroboration, not waste. Keep one scenario and
   **carry every `@from-*` tag onto the survivor**.
+- Drop candidates already covered by an existing test, and **say how many**. That number is
+  worth reporting on its own: a high count means the project's suite is stronger than it
+  looked, and a zero on a repository that has a real suite means the scouts were never given
+  the coverage summary and should be re-run.
 - Enforce the evidence rule, and **report the numbers**: each scout returns
   `CONSIDERED / RETURNED / DROPPED`. Sum them per modality and print the drop rate. A drop
   rate of zero across every modality does not mean the rule is working — it means the rule is
