@@ -269,6 +269,30 @@ the crawl drives Playwright directly.
 **Turn 1 checks all four and tells you what is missing before you start**, rather than letting
 you discover it four turns later.
 
+### Keeping up with the skills it borrows from
+
+This plugin paraphrases rules from skills it does not own — mostly inside "if the skill is
+missing" fallbacks, but the characterisations in `SKILL.md` and `DESIGN.md` count too. Those can
+go stale silently: a skill that loads perfectly while one of its rules has changed underneath is
+a failure no missing-skill check can catch, because nothing is missing.
+
+So the versions we describe are pinned by content hash in
+[`upstream-skills.json`](upstream-skills.json), along with the specific rules we characterise
+and every file that restates them:
+
+```bash
+node scripts/check-upstream.mjs              # is your installed skill the version we describe?
+node scripts/check-upstream.mjs --upstream   # has the source itself moved on?
+```
+
+Drift is a prompt to re-read, not a fault. Most edits are cosmetic — the pin records one such
+case already, where the `tdd` skill changed how it tells you to load a *different* skill without
+touching any rule we describe. If a rule genuinely changed, the check names the files to update.
+
+We deliberately do **not** vendor these skills. A copy stops receiving its author's improvements
+and starts being a fork nobody maintains, and the point of building on them is that they are
+better maintained than a snapshot would be.
+
 **Before the crawl writes anything**, it asks you to confirm the target is disposable and its
 outbound email is sandboxed. Crawling means *doing* things — submitting forms, cancelling
 records. Point it at a seeded local instance, never staging.

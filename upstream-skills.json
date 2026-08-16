@@ -1,0 +1,36 @@
+{
+  "_why": "This plugin paraphrases rules from skills it does not own. A rule can change upstream while our prose keeps describing the old one -- a quiet failure the SKILLS: MISSING line cannot catch, because the skill is present and loads fine. Pinning the exact version our prose was written against makes that drift detectable.",
+  "skills": [
+    {
+      "name": "tdd",
+      "source": "https://github.com/mattpocock/skills",
+      "raw": "https://raw.githubusercontent.com/mattpocock/skills/main/skills/engineering/tdd/SKILL.md",
+      "author": "Matt Pocock",
+      "pinnedSha256": "6875cbca6b7d17be635dc9b457cc6363125f85cef26f443991b77c7d9eb430d2",
+      "verifiedOn": "2026-08-16",
+      "charactersedRules": [
+        "implementation-coupled: verifying through a side channel, e.g. querying the database instead of using the interface",
+        "tautological: expected values must come from an independent source of truth, not recomputed the way the code does",
+        "horizontal slicing: writing all tests first, then all implementation; work in vertical slices",
+        "red before green; one slice at a time; refactoring is not part of the loop",
+        "seams: the public boundary you observe behaviour at, and no test at an unconfirmed seam"
+      ],
+      "paraphrasedIn": [
+        "commands/implement.md",
+        "agents/capability-implementer.md",
+        "agents/change-developer.md",
+        "skills/tddbanking/SKILL.md",
+        "DESIGN.md",
+        "README.md"
+      ],
+      "knownEquivalent": [
+        {
+          "sha256": "5e6b9c16b547113e90afbb946489d1c1384be5c2128f0159bd0bee57251ecf08",
+          "note": "Differs from the pin by one line: 'use the /codebase-design skill' became 'call the Skill tool with \"codebase-design\"'. A mechanism change in the upstream skill's own prose; it touches none of the rules this plugin characterises, so paraphrases written against either version are accurate.",
+          "checkedOn": "2026-08-16"
+        }
+      ],
+      "_equivalenceRule": "A hash belongs here only after someone has read the diff and confirmed it changes no characterised rule. It is a record that the check was done, not a way to silence the warning."
+    }
+  ]
+}
