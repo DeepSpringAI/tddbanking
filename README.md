@@ -13,10 +13,11 @@ Then you run it again next month and it finds what your new features left untest
 ## It doesn't invent any of this — it wires together three things that already work
 
 That is the whole idea. Each of these is good on its own, and each solves one part of the
-problem. The plugin's contribution is the handoffs between them, and the discipline to run all
-four steps instead of stopping after the interesting one.
+problem. The plugin's contribution is the handoffs between them, and the discipline to run every step
+instead of stopping after the interesting one. Each credit below says where in
+[the cycle](#the-cycle) it does its work.
 
-**[The `tdd` skill](https://github.com/mattpocock/skills) — by Matt Pocock**
+**[The `tdd` skill](https://github.com/mattpocock/skills) — by Matt Pocock** · *used at steps 2 and 5*
 The red/green discipline, and the reason the tests are worth keeping. It defines what a good
 test is, where tests belong (*seams* — the public boundary you observe behaviour at), and the
 anti-patterns that quietly ruin a suite: tests coupled to implementation, tests that recompute
@@ -24,13 +25,13 @@ their own expected value, tests written in bulk against imagined behaviour. tddb
 it rather than restating it. Using it visibly improves what Claude produces; that is why it is
 here.
 
-**[OpenSpec](https://github.com/Fission-AI/OpenSpec)**
+**[OpenSpec](https://github.com/Fission-AI/OpenSpec)** · *used at step 4*
 Turns a rough requirement into a real specification — proposal, delta specs, design, and a
 task-by-task implementation plan. In practice it plans a change better than the built-in
 planning modes do. tddbanking uses it at the end: every proven bug leaves the loop as an
 OpenSpec change, not as a bug report someone has to re-specify.
 
-**[playwright-bdd](https://github.com/vitalets/playwright-bdd) — by Vitaliy Potapov**
+**[playwright-bdd](https://github.com/vitalets/playwright-bdd) — by Vitaliy Potapov** · *used at steps 2 and 3*
 Gherkin feature files compiled into Playwright specs. Thin step definitions, locators in Page
 Objects. It is what makes a browser test readable as a requirement instead of a script, which
 matters because these tests double as the acceptance criteria handed to OpenSpec.
@@ -42,13 +43,16 @@ If you already use any of these, this plugin is the sequencing you were going to
 
 ## The cycle
 
-Four turns. Each one ends deliberately so you can look at the result before the next begins.
+Four turns, then a handoff. Each turn ends deliberately so you can look at the result before the
+next begins.
 
 ```
 1  discover   what should a user be able to do, and what covers it today?
-2  implement  write browser tests for everything that has none
+2  implement  write browser tests for everything that has none      ── tdd: what a good test is
 3  verify     run them all; triage every failure
 4  file       turn each proven bug into an OpenSpec change proposal   ← loop ends
+   ┊
+5  you build  implement those proposals                             ── tdd: red → green
 ```
 
 **1. Discover.** Reads your *existing* test suites first, so it looks for what is untested
@@ -60,12 +64,24 @@ and banks what it finds.
 capability per agent, in parallel. Not a prioritised subset: the whole list. This is the step
 teams skip, and skipping it is how a test suite ends up 12% done and abandoned.
 
+This is where the **`tdd` skill** does its first job. It is the standard for whether these tests
+are worth keeping — tests observed at a real boundary, expected values taken from the scenario
+rather than from whatever the app currently returns, and no asserting through a side channel.
+That last one is not theoretical: checking a browser scenario by reading the API passes happily
+while the screen is broken.
+
 **3. Verify.** Runs the bank and gives every failure a verdict — **defect**, **flake**, or
 **stale scenario** — with a citation. A red browser test means three unrelated things, and
 "probably flaky, re-run it" is how suites die.
 
 **4. File.** Every proven defect becomes an OpenSpec change proposal, grouped by cause. Then it
-stops. You implement the changes; a new round happens when you ask for one.
+stops. A new round happens when you ask for one.
+
+**5. Then you build — and this is the point of all of it.** Each proposal arrives with a
+failing browser scenario attached, so **the red half of red-green is already written, evidenced
+and agreed.** The `tdd` skill governs the work from there: red before green, one slice at a
+time, and make it pass without touching the assertion. That is the handoff the whole loop
+exists to set up, which is why it is drawn here even though the plugin does not run it for you.
 
 Run it again after your next feature and it picks up from the bank it already built.
 
