@@ -44,6 +44,15 @@ the issue tracker, changelog entries, support threads. Each real defect becomes 
 `@regression` candidate stating the behavior that should have held. A bug that happened once
 is far likelier to recur than one that never has.
 
+## Already-covered behaviour
+
+You may be given a summary of the tests this project already has. **Do not return a candidate
+for behaviour they already assert.** The bank exists to find what is untested, not to restate
+what someone already tested elsewhere, and a duplicate costs runtime on every run forever.
+
+Count those separately and report them, so the caller can tell "this area is already well
+covered" apart from "this modality found nothing".
+
 ## The evidence rule
 
 Every candidate cites a **verifiable locator** — something a reader can go and check:
