@@ -10,20 +10,33 @@ const check = (label, actual, expected) => {
 
 console.log('bank-stats');
 // The regression this script exists for: a comment between tags and keyword must not hide a scenario.
-check('counts every scenario including the commented one', s.total, 6);
-check('a Scenario Outline counts once, not per example', s.byCapability.tricky.total, 6);
+check('counts every scenario including the commented one', s.total, 9);
+check('a Scenario Outline counts once, not per example', s.byCapability.tricky.total, 9);
 check('live excludes drafts', s.live, 2);
-check('draft count', s.draft, 4);
+check('draft count', s.draft, 7);
 check('blocked detected from the # blocked: note', s.blocked, 1);
 // A reachable @gap-suspected scenario IS implementable: the failing test is the proof of the
 // gap. Only an unreachable one is out of turn 2's scope.
-check('implementable excludes blocked but keeps reachable gap-suspected', s.implementable, 3);
+check('implementable excludes blocked but keeps reachable gap-suspected', s.implementable, 6);
 check('smoke count', s.smoke, 2);
 check('known defect carries its change id', s.knownDefects, [{ name: 'A known defect', change: 'F-9' }]);
 check('gap-suspected listed', s.gapSuspected, ['An outline counts once']);
 check('drafts missing evidence are flagged', s.missingEvidence.length, 1);
 check('feature-level capability applies to scenarios', Object.keys(s.byCapability), ['tricky']);
-check('source counts handle bare and parameterised tags', s.bySource['@from-story'], 2);
+check('source counts handle bare and parameterised tags', s.bySource['@from-story'], 4);
+
+// Corroboration is reported per pair, because one total hides two agents reading the same
+// source and agreeing with themselves -- which was 70% of "corroboration" in a real run.
+// The regression this exists for: two sources of the SAME modality must still register as a
+// pair, or the duplication they represent is invisible. Keying by prefix would hide it.
+check('same-modality sources still form a visible pair',
+      s.corroborationPairs['@from-story:chg-auth-proposal + @from-story:chg-auth-specs'], 1);
+check('cross-modality pairs are keyed by full source tag',
+      s.corroborationPairs['@from-bug:abc1234 + @from-crawl'], 1);
+check('a scenario with one source contributes no pair', Object.values(s.corroborationPairs).reduce((a,b)=>a+b,0), 3);
+
+// Novel = no document predicted it. These are what a docs-led process cannot reach.
+check('novel counts scenarios with no story source', s.novel, 5);
 
 // Regression: the CLI must actually print when invoked through a symlinked path.
 // Plugins install under a symlinked dir on some setups; comparing import.meta.url to

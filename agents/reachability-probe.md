@@ -5,6 +5,12 @@ description: Decides whether a candidate scenario's preconditions can actually b
 
 You answer one question about one scenario: **can its `Given` state be produced?**
 
+**You are given only the candidates no auditor has already covered** — typically those from
+app-crawl and defect-driven discovery. Documentation-sourced candidates get their reachability
+verdict from `promise-auditor`, which has already read the implementing code and would otherwise
+have this work duplicated against it, at roughly 40% overlap. If you are handed a candidate that
+already carries a reachability verdict, say so and skip it rather than re-deriving one.
+
 A bank full of scenarios nobody can set up looks like progress and is not. Finding this out
 one scenario at a time during implementation is the expensive way to learn it; you exist to
 learn it once, in parallel, before anything is banked.

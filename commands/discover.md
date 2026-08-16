@@ -56,24 +56,36 @@ Cost is not a constraint here; breadth is. Dispatch every applicable agent at on
 - **One `scenario-scout` for defect-driven.** Mines fixed bugs out of git history and the
   issue tracker. Expect this to produce the most scenarios and the fewest findings — those
   bugs are already fixed, so its output is insurance, not detection.
-- **One `promise-extractor` per document class**, run separately rather than as one pass:
-  README and product docs, release notes and changelog, business-rule and spec documents,
-  handoff and plan documents, ADRs, tickets. Skip a class only when it does not exist, and
-  say which you skipped. Splitting these is deliberate: one agent skimming everything reads
-  nothing closely.
+- **One `promise-extractor` per source.** A source is one artifact that speaks with one voice,
+  **not one file type**: the product's own description, release notes, a specification or
+  rulebook, handoff and plan documents, decision records, tickets. Skip a source only when it
+  does not exist, and say which you skipped.
+
+  **Do not split one artifact across agents.** A single spec change with a proposal, a task list
+  and delta specs is *one* source, however many files it spans. Two agents reading different
+  files of it will agree with each other and that agreement means nothing — in a measured run
+  this accounted for 70% of all apparent corroboration and about 10% of the turn's budget.
+  Splitting by source is what makes close reading affordable; splitting by file manufactures
+  false confidence.
 
 Then, as extractions land, dispatch **`promise-auditor`** over the extracted promises — one
 per batch of related promises, in parallel. This is the stage that finds documented behaviour
 that was never built, and it is historically the highest-value output of the whole turn.
 
-## 3. Probe reachability — in parallel, before anything is banked
+## 3. Probe reachability for whatever the auditors did not cover
 
-Dispatch **`reachability-probe`** across the merged candidate set. Each returns `reachable` or
-`blocked` with the specific missing fixture.
+`promise-auditor` already returns a reachability verdict for the promises it audits — it has
+read the implementing code, so asking a separate agent the same question duplicates roughly 40%
+of the work. Dispatch **`reachability-probe`** only over the remaining candidates, which are
+typically the app-crawl and defect-driven ones.
 
-Do not skip this to save time. A bank full of scenarios nobody can set up looks like progress
-and is not; discovering it one scenario at a time during turn 2 is the expensive way to learn
-the same thing.
+Do not skip this. A bank full of scenarios nobody can set up looks like progress and is not, and
+discovering it one scenario at a time during turn 2 is the expensive way to learn it.
+
+**On a large bank, banking before probing is acceptable and sometimes better.** The audits can
+change what "reachable" even means — a promise found to be unbuilt is a different question from
+one that merely lacks a fixture. What matters is that nothing reaches turn 2 unprobed, not the
+order in which the two happen.
 
 ## 4. Merge, dedup, and bank
 
@@ -95,8 +107,27 @@ the same thing.
 
 ## 5. Report and stop
 
-Print `node ${CLAUDE_PLUGIN_ROOT}/scripts/bank-stats.mjs`, plus the per-modality
+Print `node ${CLAUDE_PLUGIN_ROOT}/scripts/bank-stats.mjs`, plus the per-source
 considered/returned/dropped table and the reachability split.
+
+Two parts of that output deserve reading rather than skimming:
+
+- **Corroboration by pair.** Any pair flagged *same modality* means two agents probably read one
+  artifact and agreed with themselves. That is not corroboration; it is duplicated cost and false
+  confidence. Say so, and merge those sources next time.
+- **The novel count** — scenarios no document predicted. These are what a documentation-led
+  process structurally cannot reach, and they are worth reading first. Do not judge a modality by
+  volume alone: in a measured run, app-crawl returned the fewest scenarios of any modality and
+  produced the entire authorization cluster, with 17 of its 18 findings predicted by nothing.
+
+**One exception to discovery-only.** If a scout reproduces a **live crash or data-destroying
+defect**, stop and report it immediately rather than banking it and moving on. Everything else
+waits for turn 3 — but a rule that says "keep quiet about the thing that is on fire until two
+turns from now" is a rule with a missing case, and in practice it gets correctly broken. Report
+it, bank the scenario as usual, and carry on.
+
+This is narrow on purpose: a reproducible crash or destructive behaviour, not a suspicion, not a
+missing feature, not something that merely looks wrong.
 
 **Do not rank the drafts and do not suggest which to implement first.** Turn 2 implements
 everything reachable; a recommended subset reads as permission to stop early, which is exactly

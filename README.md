@@ -165,8 +165,11 @@ So **1.95M for the bank itself**, and about 2.2M if you delegate triage for all 
 That is roughly **34k tokens per scenario** banked, implemented and verified — and it bought 52
 working browser tests and 6 real defects on an app that already had a passing test suite.
 
-**Wall clock is about 90 minutes, not the sum.** Everything within a turn runs in parallel, so
-you wait for the slowest agent, not all of them. Turn 2's six implementers ran concurrently.
+**Wall clock is far less than the sum, but not by as much as the agent count suggests.** A
+second instrumented run measured **2.1×**, not the 12× its twelve agents imply — because a turn
+is a chain of *dependent* stages (extract → audit → probe), and speedup is bounded by stage
+depth, not by fan-out. Budget for that: adding agents within a stage buys throughput, not
+latency.
 
 ### Where the money goes
 
@@ -198,6 +201,23 @@ proportional to how much you shipped since the last one.
   defect-driven cost about a third of it between them and need no running app.
 - **Let turn 2 run long rather than wide** on a small bank; the parallel fan-out is what makes
   it fast, not what makes it cheap.
+
+### A second run, on a codebase ~3× larger
+
+| | |
+|---|---|
+| Turn 1 only | 12 agents, **1.51M tokens**, 784 tool calls |
+| Wall clock | ~70 min (2.1× speedup from parallelism) |
+| Produced | 176 scenarios, **15 defects** — 3 of them severe |
+
+That is roughly **100k tokens per defect found**, which is the number most worth carrying into a
+budgeting conversation. It scaled: 3× the codebase produced 3× the scenarios and 2.5× the
+defects.
+
+It also measured two things worth knowing before you spend. The evidence rule **dropped 51% of
+candidates**, every drop justified — it is not a rubber stamp. And deduplication against the
+existing suite dropped 35 more as already covered, which is the difference between finding what
+is *untested* and finding what is merely *unbanked*.
 
 ### The caveat
 

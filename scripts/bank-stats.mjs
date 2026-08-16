@@ -120,8 +120,43 @@ export function summarise(scenarios) {
       return a;
     }, {}),
     corroborated: scenarios.filter((s) => s.tags.filter((t) => t.startsWith('@from-')).length > 1).length,
+    corroborationPairs: pairCounts(scenarios),
+    // Scenarios no document predicted. These are the ones worth reading first: a behaviour
+    // found only by crawling or only by mining defects is one nobody wrote down, which is
+    // exactly the coverage a documentation-led process cannot reach.
+    novel: scenarios.filter((s) => !s.tags.some((t) => t.startsWith('@from-story'))).length,
   };
 }
+
+/**
+ * Count how often each pair of sources corroborate the same scenario.
+ *
+ * Pairs are keyed by the **full** source tag, not the modality prefix. That distinction is the
+ * whole point: two extractors reading different files of the same underlying artifact both tag
+ * `@from-story:`, and keying by prefix would collapse them into one source and hide the
+ * duplication entirely. In a real run 70% of all "corroboration" was exactly that -- two agents
+ * reading one source and agreeing with themselves.
+ *
+ * A pair whose members share a prefix is flagged as same-family: probably one source, not two.
+ */
+function pairCounts(scenarios) {
+  const counts = {};
+  for (const sc of scenarios) {
+    const sources = [...new Set(sc.tags.filter((t) => t.startsWith('@from-')))].sort();
+    for (let i = 0; i < sources.length; i++) {
+      for (let j = i + 1; j < sources.length; j++) {
+        const key = `${sources[i]} + ${sources[j]}`;
+        counts[key] = (counts[key] ?? 0) + 1;
+      }
+    }
+  }
+  return Object.fromEntries(Object.entries(counts).sort((a, b) => b[1] - a[1]));
+}
+
+const sameFamily = (pair) => {
+  const [a, b] = pair.split(' + ');
+  return a.split(':')[0] === b.split(':')[0];
+};
 
 function bar(pct) { const n = Math.round(pct * 10); return '#'.repeat(n) + '.'.repeat(10 - n); }
 
@@ -131,11 +166,31 @@ function main() {
   const s = summarise(parseBank(dir));
   if (argv.includes('--json')) { console.log(JSON.stringify(s, null, 2)); return; }
   console.log(`BANK: ${s.total} scenarios | ${s.live} live | ${s.draft} draft | ${s.blocked} blocked`);
-  console.log(`COVERAGE: ${(s.coverage * 100).toFixed(0)}%   implementable drafts: ${s.implementable}\n`);
+  // Counts first. "COVERAGE: 0%" after a discovery turn reads as failure when it means
+  // "banked 176, implemented none yet" -- the same discouragement the ranked queue used to cause.
+  console.log(`COVERAGE: ${s.live} live / ${s.total} banked (${(s.coverage * 100).toFixed(0)}%)   implementable drafts: ${s.implementable}\n`);
   const caps = Object.entries(s.byCapability).sort((a, b) => a[1].live / a[1].total - b[1].live / b[1].total);
   for (const [cap, c] of caps) {
     const flags = [c.blocked ? `${c.blocked} blocked` : null, c.smoke ? null : 'no smoke gate'].filter(Boolean).join(', ');
     console.log(`  ${cap.padEnd(22)} ${bar(c.live / c.total)} ${c.live}/${c.total}${flags ? '  (' + flags + ')' : ''}`);
+  }
+  const pairs = Object.entries(s.corroborationPairs);
+  if (pairs.length) {
+    const total = pairs.reduce((n, [, c]) => n + c, 0);
+    const suspect = pairs.filter(([p]) => sameFamily(p)).reduce((n, [, c]) => n + c, 0);
+    console.log('\nCORROBORATION BY PAIR');
+    for (const [pair, c] of pairs.slice(0, 12)) {
+      console.log(`  ${pair.padEnd(46)} ${String(c).padStart(4)}${sameFamily(pair) ? '  <- same modality: one source or two?' : ''}`);
+    }
+    if (pairs.length > 12) console.log(`  ... and ${pairs.length - 12} more pairs`);
+    if (suspect) {
+      console.log(`\n  ${suspect} of ${total} corroborations are between sources of the same modality.`);
+      console.log('  Two agents reading different files of one artifact is not corroboration.');
+    }
+  }
+  if (s.total) {
+    console.log(`\nNOVEL: ${s.novel} of ${s.total} scenarios were predicted by no document.`);
+    console.log('  These are what a documentation-led process cannot reach. Read them first.');
   }
   if (s.knownDefects.length) {
     console.log('\nKNOWN DEFECTS');
