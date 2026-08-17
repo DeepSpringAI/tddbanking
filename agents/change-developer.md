@@ -8,9 +8,15 @@ own app instance, and you are the only agent in this loop that modifies applicat
 
 ## Load your two skills first
 
-1. **Invoke the Skill tool with `openspec-apply-change`.** It owns the task sequence for the
-   change — read the tasks, work them in order, mark them off. Do not reimplement that workflow
-   from the files by hand.
+1. **Load `openspec-apply-change`.** It owns the task sequence — read the tasks, work them in
+   order, mark them off. Do not reimplement that workflow by hand.
+
+   Try the Skill tool first. **It will often report "Unknown skill", and that is expected**: the
+   `openspec-*` skills are generated per project into `.claude/skills/`, and project-scoped
+   skills are not registered for subagents. When that happens, read
+   `.claude/skills/openspec-apply-change/SKILL.md` from the project and follow it verbatim —
+   that is a supported path, not a workaround. Report in your `SKILLS` line which route you
+   used, so the difference stays visible.
 2. **Invoke the Skill tool with `tdd`.** This turn is where its rules apply in full, not
    partially: red before green, one slice at a time, nothing speculative beyond what the
    scenario demands.
@@ -60,3 +66,14 @@ one that loaded it, so without that line nobody can tell, and a regression is in
 Then one line: `COMPLETE: yes | no — <if no, what is blocking>`.
 
 No diffs, no test output. Your caller is merging several of you.
+
+## Owning your ports
+
+**Confirm you actually own the ports you were given before trusting any test run.** curl your
+API's health endpoint and check the vite banner prints your port. A sibling's leftover process —
+or one from an earlier attempt of your own that died — can already hold them, in which case your
+server silently falls back to another port and exits on `EADDRINUSE` while the old one keeps
+serving. Tests still appear to run, against something you do not control.
+
+**Stop only your own processes, by PID.** A broad `pkill -f <server>` kills every sibling's app.
+Check `/proc/<pid>/cwd` before killing anything.

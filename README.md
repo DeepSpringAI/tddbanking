@@ -202,6 +202,23 @@ proportional to how much you shipped since the last one.
 - **Let turn 2 run long rather than wide** on a small bank; the parallel fan-out is what makes
   it fast, not what makes it cheap.
 
+### Turn 5, run for real
+
+The first full turn-5 run took a bank from 52 pass / 6 fail to **58 pass / 0 fail** — every
+defect the loop had found, fixed, each proven by the scenario that found it.
+
+| | |
+|---|---|
+| Changes developed | 6, in parallel worktrees |
+| Bank before / after | 52 pass, 6 fail → **58 pass, 0 fail** |
+| New defects found while fixing | 2, filed rather than absorbed |
+
+What made it trustworthy was not the pass count but what the developers *refused* to do. One
+changed a fixture outside its proposal's scope and said so with reasoning. One reported that its
+permission allow-lists were an inference the spec never pinned. One refused to open a congress a
+blocked scenario wanted opened, because a passing scenario asserted it was closed, and reported
+the contradiction rather than picking a side. None edited a scenario to make its own work pass.
+
 ### A second run, on a codebase ~3× larger
 
 | | |

@@ -72,6 +72,16 @@ and ask rather than guessing a port.
    anything. Translate `npm run` to the detected package manager. Explain to the user, in one
    line, that calling `bddgen` bare will fail on drafts by design.
 6. **Gitignore** `.features-gen/`, `test-results/`, `playwright-report/`.
+6a. **Keep the bank inside the type checker and outside the other test runner.** Two gaps that
+   look small and are not:
+   - Add `pages/` and `steps/` to the project's `tsconfig.json` includes. A bank whose page
+     objects are untypechecked will accumulate real errors invisibly — a duplicate property
+     declaration survived undetected in one production bank because `tsconfig` covered only
+     `src`.
+   - Exclude `.features-gen/**` from any other test runner the project uses (vitest, jest). The
+     generated specs are Playwright tests; another runner will collect them and report a screenful
+     of failures that belong to nobody. This breaks the promise that the bank leaves the existing
+     suite alone.
 7. **Add CI** from `${CLAUDE_PLUGIN_ROOT}/templates/workflows/bank.yml` to
    `.github/workflows/bank.yml` — skip if a workflow already runs Playwright, and instead
    tell the user which job to add `test:smoke` to.

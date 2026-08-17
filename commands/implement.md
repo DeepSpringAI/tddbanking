@@ -70,6 +70,22 @@ real test failures. This happened repeatedly in the first production run.
 file.** A shared fixture registry is a single file every parallel worker must edit, and it
 turns every merge into a conflict. `steps/fixtures.ts` holds only `createBdd(test)`.
 
+## Dispatching under load, and cleaning up after failures
+
+Fan out wide by default, but **expect some agents to die on transient API errors** — in one run
+four of six were lost to 529s in a single dispatch. That is survivable if you plan for it:
+
+- A killed agent leaves its worktree and branch behind. **Retries reuse them** — tell the agent
+  the worktree already exists and to `git merge` the base branch first, rather than recreating it.
+- It also leaves **running servers holding its ports**, which silently steal them from the retry.
+- If failures cluster, retry in smaller batches rather than re-dispatching the full width.
+
+**Do not sweep orphaned processes by directory.** A directory match is not a liveness check: the
+worktree of an agent that is still working looks exactly like the worktree of one that died. Kill
+only processes belonging to agents you know have finished, and when in doubt tell the running
+agent to restart its own server instead of killing it for them. This mistake has been made — it
+takes down live agents mid-run and produces failures that look like real defects.
+
 ## 3. Merge
 
 Bring each worktree's work back in turn. File conflicts should be rare by construction; where

@@ -86,3 +86,14 @@ standard this turn assumes, and the caller has been told.
   outcomes are observed.
 - **Never take an expected value from the running application.** It comes from the scenario and
   the document the scenario cites.
+
+## Owning your ports
+
+**Confirm you actually own the ports you were given before trusting any test run.** curl your
+API's health endpoint and check the vite banner prints your port. A sibling's leftover process —
+or one from an earlier attempt of your own that died — can already hold them, in which case your
+server silently falls back to another port and exits on `EADDRINUSE` while the old one keeps
+serving. Tests still appear to run, against something you do not control.
+
+**Stop only your own processes, by PID.** A broad `pkill -f <server>` kills every sibling's app.
+Check `/proc/<pid>/cwd` before killing anything.
