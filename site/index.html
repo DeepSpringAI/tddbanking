@@ -23,6 +23,23 @@
 </head>
 <body>
 
+<!-- The page background. Three soft washes in the site's own three colours
+     drifting over a faint field of bars, where cells occasionally go live —
+     the bank filling up. Decorative: hidden from assistive tech, and it never
+     takes a pointer event. -->
+<div class="bg" id="bg" aria-hidden="true">
+  <div class="bg-aurora" id="bgAurora">
+    <div class="bg-drift">
+      <span class="blob blob-accent"></span>
+      <span class="blob blob-pass"></span>
+      <span class="blob blob-draft"></span>
+    </div>
+  </div>
+  <div class="bg-veil"></div>
+  <div class="bg-grid"></div>
+  <div class="bg-live" id="bgLive"></div>
+</div>
+
 <a class="skip" href="#main">Skip to content</a>
 
 <header class="nav" id="nav">
@@ -54,7 +71,7 @@
   <!-- ───────────────────────────── hero ───────────────────────────── -->
   <section class="hero" id="top">
     <div class="wrap">
-      <p class="eyebrow reveal">A Claude Code plugin · v0.3.1 · MIT</p>
+      <p class="eyebrow reveal">A Claude Code plugin · v0.4.2 · MIT</p>
       <h1 class="display reveal">Nobody tests what a&nbsp;user actually does in a&nbsp;browser.</h1>
       <p class="lede reveal">
         Your team writes backend tests. tddbanking closes the gap that leaves — and keeps it closed.
@@ -80,18 +97,18 @@
     </div>
   </section>
 
-  <!-- ───────────────────────── the four turns ─────────────────────── -->
+  <!-- ───────────────────────── the five turns ─────────────────────── -->
   <section class="band" id="loop">
     <div class="wrap">
       <p class="eyebrow reveal">The cycle</p>
-      <h2 class="reveal">Four turns. Each one ends deliberately.</h2>
+      <h2 class="reveal">Five turns. Each one ends deliberately.</h2>
       <p class="lede reveal">
-        So you can look at the result before the next begins. Turn 4 is terminal — you implement the
-        changes it filed, and a new round happens when you ask for one.
+        So you can look at the result before the next begins. It ends at turn 5, with the bugs it
+        found already fixed — and a new round happens when you ask for one.
       </p>
 
       <div class="scrubber reveal" id="scrubber">
-        <div class="tabs" role="tablist" aria-label="The four turns">
+        <div class="tabs" role="tablist" aria-label="The five turns">
           <span class="tab-thumb" id="tabThumb" aria-hidden="true"></span>
           <button class="tab" role="tab" id="tab-0" aria-controls="panel-0" aria-selected="true" tabindex="0">
             <span class="tab-n">1</span><span class="tab-t">discover</span>
@@ -104,6 +121,9 @@
           </button>
           <button class="tab" role="tab" id="tab-3" aria-controls="panel-3" aria-selected="false" tabindex="-1">
             <span class="tab-n">4</span><span class="tab-t">file</span>
+          </button>
+          <button class="tab" role="tab" id="tab-4" aria-controls="panel-4" aria-selected="false" tabindex="-1">
+            <span class="tab-n">5</span><span class="tab-t">develop</span>
           </button>
         </div>
 
@@ -200,10 +220,10 @@
                 <p>
                   Grouped by cause and filed into <a href="https://github.com/Fission-AI/OpenSpec" target="_blank" rel="noopener">OpenSpec</a>
                   as a proposal, delta specs and a task-by-task plan — each one shipping its failing scenario
-                  as the acceptance test. Then it stops. You implement the changes; a new round happens when
-                  you ask for one.
+                  as the acceptance test. It <em>invokes</em> OpenSpec to produce them, rather than writing
+                  the artifacts by hand.
                 </p>
-                <p class="note">Proven bugs stay tagged <code>@known-defect</code> so they don't block unrelated work — while the full run keeps them visible. The day one passes, the fix landed.</p>
+                <p class="note">Proven bugs stay tagged <code>@known-defect</code> so they don't block unrelated work — while the full run keeps them visible.</p>
               </div>
               <div class="panel-art">
                 <div class="card spec-card">
@@ -217,6 +237,29 @@
                     <li><span class="tick" aria-hidden="true">✓</span> tasks.md — 6 tasks</li>
                     <li><span class="tick" aria-hidden="true">✓</span> acceptance: the failing scenario</li>
                   </ul>
+                </div>
+                <p class="art-cap">Every proposal arrives carrying its own failing test.</p>
+              </div>
+            </article>
+
+            <!-- 5 · develop -->
+            <article class="panel" role="tabpanel" id="panel-4" aria-labelledby="tab-4">
+              <div class="panel-text">
+                <h3>Take every change to green — and this is the point of all of it.</h3>
+                <p>
+                  Each proposal carries a failing browser scenario, so <strong>the red half of red-green is
+                  already written, evidenced and agreed.</strong> Turn 5 invokes the
+                  <a href="https://github.com/mattpocock/skills" target="_blank" rel="noopener"><code>tdd</code> skill</a>
+                  and works each change to green <em>without touching the assertion</em>. When a scenario
+                  passes, its <code>@known-defect</code> tag comes off: the bank said what was broken, and now
+                  says it is fixed.
+                </p>
+                <p class="note">This is the only turn that writes application code, so it confirms scope with you first and works in an isolated worktree per change.</p>
+              </div>
+              <div class="panel-art">
+                <div class="card code-card">
+                  <div class="card-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="card-name">the tag comes off</span></div>
+<pre class="code"><span class="c-del">- <span class="c-draft">@known-defect</span> @defect-change:fix-disclosure</span><span class="c-add">+ @capability:disclosure</span><span class="ln">  <span class="c-kw">Scenario:</span> A non-consenting HCP is</span><span class="ln">            never named in a report</span><span class="ln"></span><span class="ln"><span class="c-pass">  ✓ 1 passed</span>  <span class="c-dim">the fix landed</span></span></pre>
                 </div>
                 <p class="art-cap">The loop ends here — on purpose.</p>
               </div>
@@ -348,10 +391,10 @@
           </div>
         </div>
         <div class="stat">
-          <div class="stat-n">~90 <span class="stat-sub">min</span></div>
+          <div class="stat-n">2.1&#8202;×</div>
           <div class="stat-l">
-            Wall clock, <em>not</em> the sum — everything within a turn runs in parallel, so you wait
-            for the slowest agent
+            The measured speedup from parallelism — <em>not</em> the 12× twelve agents imply. A turn is a
+            chain of dependent stages, so speedup is bounded by depth, not fan-out
           </div>
         </div>
       </div>
@@ -410,7 +453,29 @@
       <p class="art-cap reveal table-note">
         About <strong>2.2M</strong> if you delegate triage for all six failures — and it bought 52
         working browser tests and 6 real defects on an app that already had a passing test suite.
+        <strong>Wall clock is far less than the sum, but not by as much as the agent count suggests:</strong>
+        adding agents within a stage buys throughput, not latency.
       </p>
+
+      <div class="second-run reveal">
+        <h3>A second run, on a codebase ~3× larger</h3>
+        <div class="run-stats">
+          <div><span class="run-n">1.51M</span><span class="run-l">tokens · 12 agents · 784 tool calls, turn 1 alone</span></div>
+          <div><span class="run-n">~70 min</span><span class="run-l">wall clock, at that 2.1× speedup</span></div>
+          <div><span class="run-n">176 / 15</span><span class="run-l">scenarios produced, and defects found — 3 of them severe</span></div>
+        </div>
+        <p>
+          Roughly <strong>100k tokens per defect found</strong>, which is the number most worth carrying
+          into a budgeting conversation. It scaled: 3× the codebase produced 3× the scenarios and 2.5× the
+          defects.
+        </p>
+        <p class="note">
+          It also measured two things worth knowing before you spend. The evidence rule
+          <strong>dropped 51% of candidates</strong>, every drop justified — it is not a rubber stamp. And
+          deduplication against the existing suite dropped 35 more as already covered, which is the
+          difference between finding what is <em>untested</em> and finding what is merely <em>unbanked</em>.
+        </p>
+      </div>
 
       <div class="grid-3">
         <article class="card mode reveal">
@@ -504,15 +569,16 @@
       <h2 class="reveal">It doesn't invent any of this. It wires together three things that already work.</h2>
       <p class="lede reveal">
         Each of these is good on its own, and each solves one part of the problem. The plugin's
-        contribution is the handoffs between them, and the discipline to run all four steps instead of
-        stopping after the interesting one. Nothing is vendored — all three are referenced by name so they
-        stay current.
+        contribution is the handoffs between them, and the discipline to run <em>every</em> step instead of
+        stopping after the interesting one. It <strong>invokes</strong> them, so they have to be installed —
+        and nothing is vendored, because a copy stops receiving its author's improvements and starts being
+        a fork nobody maintains.
       </p>
 
       <div class="grid-3">
         <article class="card dep reveal">
           <h3><a href="https://github.com/mattpocock/skills" target="_blank" rel="noopener">The <code>tdd</code> skill <span class="arrow" aria-hidden="true">↗</span></a></h3>
-          <p class="dep-by">by Matt Pocock</p>
+          <p class="dep-by">by Matt Pocock <span class="dep-step">invoked at steps 2 and 5</span></p>
           <p>
             The red/green discipline, and the reason the tests are worth keeping. It defines what a good test
             is, where tests belong — <em>seams</em>, the public boundary you observe behaviour at — and the
@@ -521,7 +587,7 @@
         </article>
         <article class="card dep reveal">
           <h3><a href="https://github.com/Fission-AI/OpenSpec" target="_blank" rel="noopener">OpenSpec <span class="arrow" aria-hidden="true">↗</span></a></h3>
-          <p class="dep-by">Fission AI</p>
+          <p class="dep-by">Fission AI <span class="dep-step">invoked at steps 4 and 5</span></p>
           <p>
             Turns a rough requirement into a real specification — proposal, delta specs, design, and a
             task-by-task implementation plan. Every proven bug leaves the loop as an OpenSpec change, not as
@@ -530,7 +596,7 @@
         </article>
         <article class="card dep reveal">
           <h3><a href="https://github.com/vitalets/playwright-bdd" target="_blank" rel="noopener">playwright-bdd <span class="arrow" aria-hidden="true">↗</span></a></h3>
-          <p class="dep-by">by Vitaliy Potapov</p>
+          <p class="dep-by">by Vitaliy Potapov <span class="dep-step">the format, at steps 2, 3 and 5</span></p>
           <p>
             Gherkin feature files compiled into Playwright specs. Thin step definitions, locators in Page
             Objects. It is what makes a browser test readable as a requirement instead of a script — which
@@ -599,14 +665,67 @@
         </div>
       </div>
 
+      <h3 class="sub-head reveal">What it needs</h3>
+      <p class="lede lede-tight reveal">
+        Node, and a web app you can run locally. Beyond that it depends on the three projects it is built
+        from — it <strong>invokes</strong> them, so they have to be installed. Turns 1–3 work without any of
+        them; the last two do not.
+      </p>
+
+      <div class="needs">
+        <div class="need reveal">
+          <h4>OpenSpec <span class="need-when">turns 4 and 5</span></h4>
+          <div class="copyline" data-copy="npm i -g @fission-ai/openspec">
+            <code><span class="sh">npm i -g</span> @fission-ai/openspec</code>
+            <button class="copybtn" type="button" aria-label="Copy: install OpenSpec"><span class="copybtn-label">Copy</span></button>
+          </div>
+          <div class="copyline" data-copy="openspec init --tools claude">
+            <code><span class="sh">openspec init</span> --tools claude</code>
+            <button class="copybtn" type="button" aria-label="Copy: openspec init"><span class="copybtn-label">Copy</span></button>
+          </div>
+          <p>
+            Note what the second command does, because it is easy to miss: <strong><code>openspec init</code>
+            is what creates the <code>openspec-*</code> skills</strong>, generating them into that project's
+            <code>.claude/skills/</code>. They are project-scoped, not global — installing the CLI alone
+            gives you no skills, and turns 4 and 5 will report them missing.
+          </p>
+        </div>
+
+        <div class="need reveal">
+          <h4>The <code>tdd</code> skill <span class="need-when">turn 5, and improves turn 2</span></h4>
+          <p>
+            A personal Claude Code skill this plugin does not ship. Get it from
+            <a href="https://github.com/mattpocock/skills" target="_blank" rel="noopener">mattpocock/skills</a>
+            and put it in <code>~/.claude/skills/tdd/</code>. Without it the loop still finds and files your
+            bugs; it just stops before fixing them.
+          </p>
+          <p class="need-more">
+            <code>webapp-testing</code> is used for app-crawl and for reproducing failures by hand. If it is
+            missing, the crawl drives Playwright directly.
+          </p>
+          <p class="need-more">
+            <strong>Turn 1 checks all four and tells you what is missing before you start</strong>, rather
+            than letting you discover it four turns later.
+          </p>
+        </div>
+      </div>
+
       <div class="reqs">
         <div class="req reveal">
-          <h3>Requirements</h3>
+          <h3>Keeping up with the skills it borrows from</h3>
           <p>
-            Node, and a web app you can run locally.
-            <a href="https://github.com/Fission-AI/OpenSpec" target="_blank" rel="noopener">OpenSpec</a>
-            (<code>npm i -g @fission-ai/openspec</code>) is needed only by turn 4. The <code>tdd</code> skill
-            and <code>webapp-testing</code> are used when present and reported as absent when not.
+            This plugin paraphrases rules from skills it does not own, and those can go stale silently: a
+            skill that loads perfectly while one of its rules changed underneath is a failure no
+            missing-skill check can catch, because nothing is missing. So the versions it describes are
+            pinned by content hash in <code>upstream-skills.json</code>.
+          </p>
+          <div class="copyline" data-copy="node scripts/check-upstream.mjs">
+            <code><span class="sh">node</span> scripts/check-upstream.mjs</code>
+            <button class="copybtn" type="button" aria-label="Copy: check upstream"><span class="copybtn-label">Copy</span></button>
+          </div>
+          <p class="copyline-note">
+            Add <code>--upstream</code> to ask whether the source itself has moved on. Drift is a prompt to
+            re-read, not a fault — and if a rule genuinely changed, the check names the files to update.
           </p>
         </div>
         <div class="req req-warn reveal">
@@ -621,7 +740,7 @@
 
       <p class="commands reveal">
         Commands: <code>init</code>, <code>discover</code>, <code>implement</code>, <code>verify</code>,
-        <code>file</code>, plus read-only <code>status</code>.
+        <code>file</code>, <code>develop</code>, plus read-only <code>status</code>.
       </p>
     </div>
   </section>
@@ -652,7 +771,7 @@
         <rect x="8" y="14.2" width="16" height="3.6" rx="1.8" fill="#fff"/>
         <rect x="8" y="20" width="16" height="3.6" rx="1.8" fill="#fff"/>
       </svg>
-      <span><span class="wm-a">tdd</span><span class="wm-b">banking</span> · v0.3.1</span>
+      <span><span class="wm-a">tdd</span><span class="wm-b">banking</span> · v0.4.2</span>
     </div>
     <p class="footer-legal">
       MIT. OpenSpec is MIT; playwright-bdd is MIT; <code>webapp-testing</code> is Apache-2.0; the

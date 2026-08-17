@@ -15,7 +15,7 @@
 :root {
   --ink:        #1d1d1f;   /* 15.5:1 worst case */
   --ink-2:      #515154;   /*  7.3:1 */
-  --ink-3:      #5f5f66;   /*  5.8:1 */
+  --ink-3:      #55555d;   /*  5.2:1 on the darkest measured backdrop */
   --accent:     #0a5bd3;   /*  5.6:1 · white on it: 6.1:1 */
   --accent-ink: #0847a8;   /* pressed / hover */
   --accent-wash:#eef3fd;
@@ -61,11 +61,15 @@ html {
   -webkit-text-size-adjust: 100%;
   scroll-behavior: smooth;
   scroll-padding-top: calc(var(--nav-h) + 1rem);
+  /* The page colour lives here, not on body: the background layer sits at
+     z-index -1, which paints above the canvas but below any block background.
+     An opaque body would hide it entirely. */
+  background: var(--canvas);
 }
 
 body {
   margin: 0;
-  background: var(--canvas);
+  background: transparent;
   color: var(--ink);
   font-family: var(--font);
   font-size: 1.0625rem;
@@ -98,6 +102,168 @@ code, pre, .mono { font-family: var(--mono); font-size: .9375em; font-variant-li
 .skip:focus { left: 0; }
 
 .wrap { max-width: var(--wrap); margin-inline: auto; padding-inline: var(--gutter); }
+
+/* ───────────────────────────── background ──────────────────────────── */
+/* Fixed to the viewport, so scrolling costs nothing to repaint and the page
+   reads as content moving over a surface rather than a mural sliding past.
+   Everything here animates transform and opacity only.
+
+   The whole layer is deliberately faint. Text sits on top of it, and the
+   palette's AA margins were measured against #fff / #f5f5f7 — a background
+   that darkened much past that would quietly spend those margins. */
+.bg {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.bg-aurora {
+  position: absolute;
+  inset: 0;
+  will-change: transform;
+}
+
+/* One drifting layer, not three.
+   Measured: animating each blob separately — and scaling them — cost 50ms a
+   frame under software rendering, because scaling a ~1100px translucent
+   gradient re-rasterises it every frame. Translating a single composited
+   layer is a blit. Same ambient motion, a fraction of the cost. */
+.bg-drift {
+  position: absolute;
+  inset: 0;
+  will-change: transform;
+  animation: drift 96s ease-in-out infinite alternate;
+}
+
+/* Far below the ~0.2 Hz band that reads as an uncomfortable pulse. */
+@keyframes drift {
+  from { transform: translate3d(0, 0, 0); }
+  to   { transform: translate3d(-6vw, 4vh, 0); }
+}
+
+/* Radial gradients with a soft falloff, rather than filter: blur() on a solid
+   — same look, without a full-surface blur pass every frame. The static poses
+   below are the composition; only the parent moves. */
+.blob {
+  position: absolute;
+  display: block;
+  border-radius: 50%;
+  will-change: opacity;   /* the scroll rotation; transform is the parent's job */
+}
+
+.blob-accent {
+  width: 78vw; height: 78vw;
+  min-width: 40rem; min-height: 40rem;
+  right: -22vw; top: -38vw;
+  background: radial-gradient(circle at 50% 50%,
+    rgba(10, 91, 211, .30), rgba(10, 91, 211, .12) 42%, rgba(10, 91, 211, 0) 68%);
+}
+
+.blob-pass {
+  width: 66vw; height: 66vw;
+  min-width: 34rem; min-height: 34rem;
+  left: -26vw; top: 14vh;
+  background: radial-gradient(circle at 50% 50%,
+    rgba(26, 127, 55, .22), rgba(26, 127, 55, .08) 44%, rgba(26, 127, 55, 0) 70%);
+}
+
+.blob-draft {
+  width: 60vw; height: 60vw;
+  min-width: 30rem; min-height: 30rem;
+  right: -6vw; bottom: -38vw;
+  background: radial-gradient(circle at 50% 50%,
+    rgba(122, 86, 16, .22), rgba(122, 86, 16, .08) 44%, rgba(122, 86, 16, 0) 70%);
+}
+
+/* The wash can be rich at the edges and still leave text on a bright surface,
+   because the content column is only ever in the middle. This veil brightens
+   that middle and fades to nothing well before the edges — wide and soft
+   enough to read as vignetting rather than as a stripe.
+
+   This is what buys the colour: without it every text colour would have to
+   clear AA against the darkest point of the wash, which caps the wash at
+   almost nothing. Measured worst case with it: 4.86:1. */
+.bg-veil {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to right,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, .50) 15%,
+    rgba(255, 255, 255, .74) 38%,
+    rgba(255, 255, 255, .74) 62%,
+    rgba(255, 255, 255, .50) 85%,
+    rgba(255, 255, 255, 0) 100%);
+}
+
+/* A field of the same rounded bar the mark is built from. One SVG tile, so
+   the whole texture costs zero DOM nodes. */
+.bg-grid {
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='128' height='128'%3E%3Crect x='46' y='61' width='36' height='6' rx='3' fill='%23000' fill-opacity='.042'/%3E%3C/svg%3E");
+  background-size: 128px 128px;
+  background-position: 0 0;
+  /* Two masks: a vignette so it reads as texture rather than graph paper, and
+     a horizontal fade that thins it out through the middle — which is exactly
+     where the content column sits. Texture belongs in the margins. */
+  -webkit-mask-image:
+    radial-gradient(ellipse 120% 95% at 50% 38%, #000 20%, rgba(0, 0, 0, .5) 66%, transparent 94%),
+    linear-gradient(to right, #000 0%, rgba(0, 0, 0, .22) 22%, rgba(0, 0, 0, .22) 78%, #000 100%);
+  -webkit-mask-composite: source-in;
+  mask-image:
+    radial-gradient(ellipse 120% 95% at 50% 38%, #000 20%, rgba(0, 0, 0, .5) 66%, transparent 94%),
+    linear-gradient(to right, #000 0%, rgba(0, 0, 0, .22) 22%, rgba(0, 0, 0, .22) 78%, #000 100%);
+  mask-composite: intersect;
+}
+
+/* The low-cost path.
+   Three viewport-sized translucent gradient layers are close to free on a GPU
+   and expensive to composite in software — measured here at ~17ms a frame
+   just by existing, animated or not. app.js samples the frame rate once on
+   load and sets this class if the device cannot keep up, trading the layered
+   wash for the same composition painted once onto the fixed backdrop. Same
+   colours, no layers, no animation, nothing per frame. */
+.bg-lite .bg {
+  background-image:
+    radial-gradient(58rem 44rem at 88% -12%, rgba(10, 91, 211, .17), rgba(10, 91, 211, 0) 70%),
+    radial-gradient(50rem 38rem at -10% 40%, rgba(26, 127, 55, .13), rgba(26, 127, 55, 0) 70%),
+    radial-gradient(44rem 34rem at 98% 112%, rgba(122, 86, 16, .13), rgba(122, 86, 16, 0) 70%);
+}
+.bg-lite .bg-aurora,
+.bg-lite .bg-live { display: none; }
+
+/* Same centre fade as the field: a cell going live is a nice detail in the
+   margin and a distraction directly behind a paragraph. */
+.bg-live {
+  position: absolute;
+  inset: 0;
+  -webkit-mask-image:
+    linear-gradient(to right, #000 0%, rgba(0, 0, 0, .12) 24%, rgba(0, 0, 0, .12) 76%, #000 100%);
+  mask-image:
+    linear-gradient(to right, #000 0%, rgba(0, 0, 0, .12) 24%, rgba(0, 0, 0, .12) 76%, #000 100%);
+}
+
+/* One cell of the field going live. Same geometry as the tile above, so it
+   lands exactly on a bar rather than near one. */
+/* A CSS transition, not a spring. Nothing here can be grabbed mid-flight, so
+   a spring buys nothing and costs a rAF loop each — measured at ~17ms a frame
+   across six of them. Springs are for what the user can touch. */
+.live-bar {
+  position: absolute;
+  width: 36px;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--accent);
+  opacity: 0;
+  transform: scaleX(.35);
+  transform-origin: 0 50%;
+  will-change: transform, opacity;
+  transition: opacity 620ms cubic-bezier(.16, .84, .28, 1),
+              transform 620ms cubic-bezier(.16, .84, .28, 1);
+}
+.live-bar.on { opacity: .24; transform: scaleX(1); }
 
 /* ───────────────────────── typography scale ─────────────────────────── */
 /* Tracking is size-specific: large type is tightened, small type is opened up.
@@ -307,10 +473,13 @@ p:last-child { margin-bottom: 0; }
 
 /* ─────────────────────────────── bands ─────────────────────────────── */
 .band { padding-block: var(--band-y); }
-.band-alt { background: var(--canvas-alt); }
+/* Translucent rather than solid #f5f5f7, so the background layer carries
+   through the grey bands instead of being switched off every other section.
+   Composites to ~#f5f5f6 over white — the value the palette was measured on. */
+.band-alt { background: rgba(20, 22, 45, .042); }
 .closer {
   padding-block: clamp(4rem, 9vw, 7rem);
-  background: var(--canvas);
+  background: transparent;
   border-top: 1px solid var(--hair-soft);
   text-align: center;
 }
@@ -348,6 +517,15 @@ p:last-child { margin-bottom: 0; }
 .dep h3 a:hover { color: var(--accent); text-decoration: none; }
 .dep h3 code { font-size: .95em; }
 .dep-by { color: var(--ink-3) !important; font-size: .875rem !important; margin-bottom: var(--s-3) !important; }
+/* Where in the cycle this one does its work — the credit is more useful with
+   the step attached than without it. */
+.dep-step {
+  display: block;
+  margin-top: .2rem;
+  font-size: .8125rem;
+  font-style: italic;
+  color: var(--accent);
+}
 
 .know h3 { font-size: 1.3125rem; letter-spacing: -0.018em; max-width: 24ch; }
 .know p { color: var(--ink-2); max-width: 46ch; }
@@ -673,6 +851,36 @@ p:last-child { margin-bottom: 0; }
 }
 .table-note { max-width: 64ch; margin-bottom: var(--s-8); }
 
+/* The second, larger run — a distinct dataset, so it gets its own frame
+   rather than being folded into the first run's numbers. */
+.second-run {
+  margin: var(--s-8) 0;
+  padding: var(--s-6);
+  background: #fff;
+  border: 1px solid var(--hair-soft);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-sm);
+}
+.second-run h3 { margin-bottom: var(--s-4); }
+.second-run p { color: var(--ink-2); font-size: 1rem; max-width: 74ch; }
+.second-run .note {
+  margin-top: var(--s-4); padding-top: var(--s-4);
+  border-top: 1px solid var(--hair-soft);
+  color: var(--ink-3); font-size: .9375rem;
+}
+.run-stats {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: var(--s-4); margin-bottom: var(--s-4);
+}
+@media (max-width: 56rem) { .run-stats { grid-template-columns: 1fr; } }
+.run-n {
+  display: block;
+  font-size: 1.5rem; font-weight: 700; letter-spacing: -0.025em;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+.run-l { display: block; margin-top: .15rem; font-size: .875rem; color: var(--ink-3); line-height: 1.45; }
+
 .ticks-tight li { font-size: .9375rem; }
 .ticks-tight { margin-top: var(--s-1); }
 .ticks-tight code { font-size: .875em; color: var(--accent); }
@@ -715,7 +923,49 @@ p:last-child { margin-bottom: 0; }
   text-transform: uppercase; color: var(--ink-3);
 }
 
-.reqs { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-4); }
+.sub-head {
+  margin-top: var(--s-12);
+  font-size: 1.375rem;
+  letter-spacing: -0.018em;
+}
+
+.needs {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: var(--s-4);
+  margin: var(--s-6) 0 var(--s-4);
+}
+@media (max-width: 56rem) { .needs { grid-template-columns: 1fr; } }
+.need {
+  padding: var(--s-6);
+  background: #fff;
+  border: 1px solid var(--hair-soft);
+  border-radius: var(--r-lg);
+}
+.need h4 {
+  margin: 0 0 var(--s-4);
+  font-size: 1.0625rem; font-weight: 600; letter-spacing: -0.01em;
+}
+.need-when {
+  display: inline-block; margin-left: .35rem;
+  padding: .1rem .45rem;
+  border-radius: 999px;
+  background: var(--accent-wash);
+  color: var(--accent);
+  font-size: .75rem; font-weight: 600; letter-spacing: .02em;
+}
+.need p { color: var(--ink-2); font-size: .9375rem; margin-top: var(--s-4); }
+.need .need-more {
+  margin-top: var(--s-4); padding-top: var(--s-4);
+  border-top: 1px solid var(--hair-soft);
+  color: var(--ink-3);
+}
+.need .copyline { background: var(--canvas-alt); }
+
+/* start, not stretch: these two cards hold very different amounts of text, and
+   a short one padded out to match a long one just reads as a gap. */
+.reqs { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-4); align-items: start; }
+.req .copyline { margin-top: var(--s-4); background: #fff; }
+.req .copyline-note { margin-top: var(--s-2); margin-bottom: 0; }
 @media (max-width: 56rem) { .reqs { grid-template-columns: 1fr; } }
 .req {
   padding: var(--s-6);
@@ -738,7 +988,7 @@ p:last-child { margin-bottom: 0; }
 .footer {
   padding-block: var(--s-12);
   border-top: 1px solid var(--hair-soft);
-  background: var(--canvas);
+  background: transparent;
 }
 .footer-inner { display: grid; gap: var(--s-4); }
 .footer-brand {
@@ -780,6 +1030,12 @@ p:last-child { margin-bottom: 0; }
   .js .panel.active { opacity: 1; visibility: visible; }
   .js .tab-thumb { transition: none; }
   .scrub-hint { display: none; }
+
+  /* The background keeps its composition and loses its motion: the drift
+     stops, and the live cells are placed once by app.js and never cycle.
+     A still page, not a blank one. */
+  .bg-drift { animation: none; transform: translate3d(-3vw, 2vh, 0); }
+  .live-bar { transition: none; }
 }
 
 @media (prefers-reduced-transparency: reduce) {
@@ -789,6 +1045,11 @@ p:last-child { margin-bottom: 0; }
     -webkit-backdrop-filter: none;
     border-bottom: 1px solid var(--hair);
   }
+  /* Someone asking for less transparency is asking for fewer layers to read
+     through, so the wash goes and the bands become solid again. */
+  .bg-aurora, .bg-live { display: none; }
+  .bg-grid { opacity: .5; }
+  .band-alt { background: var(--canvas-alt); }
 }
 
 @media (prefers-contrast: more) {
@@ -804,10 +1065,13 @@ p:last-child { margin-bottom: 0; }
   }
   .card, .panel, .copyline, .stat, .req, .finding { border: 1px solid var(--hair); }
   .btn-ghost { border-color: var(--accent); }
+  /* Nothing decorative may sit between the reader and the words. */
+  .bg { display: none; }
+  .band-alt { background: var(--canvas-alt); }
 }
 
 @media print {
-  .nav, .scrub-hint, .tabs, .copybtn { display: none !important; }
+  .nav, .scrub-hint, .tabs, .copybtn, .bg { display: none !important; }
   .js .reveal { opacity: 1 !important; transform: none !important; }
   .track { display: block !important; transform: none !important; }
   .panel { break-inside: avoid; box-shadow: none; }

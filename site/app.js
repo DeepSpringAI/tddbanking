@@ -117,6 +117,17 @@
 
   var clamp = function (n, lo, hi) { return n < lo ? lo : n > hi ? hi : n; };
 
+  /* While the user is actually dragging something, the decorative background
+     gets out of the way. Response is the foundation everything else is built
+     on (apple-design §1) — background frames are not worth a frame of lag on
+     the thing under the finger. */
+  var gesture = { active: false, onChange: null };
+  function setGesture(on) {
+    if (gesture.active === on) return;
+    gesture.active = on;
+    if (gesture.onChange) gesture.onChange(on);
+  }
+
   /* ──────────────────────────── nav chrome ──────────────────────────── */
   (function nav() {
     var el = document.getElementById('nav');
@@ -202,6 +213,175 @@
         });
       });
     });
+  })();
+
+  /* ───────────────────────── the page background ────────────────────── */
+  /* Three soft washes over a field of bars, with cells occasionally going
+     live. It is decorative, so it is also the first thing to switch off: no
+     cycling when the tab is hidden, and no motion at all under reduced
+     motion — where it settles into a still composition rather than nothing. */
+  (function background() {
+    var root = document.getElementById('bg');
+    var aurora = document.getElementById('bgAurora');
+    var live = document.getElementById('bgLive');
+    if (!root || !live) return;
+
+    // Must match the SVG tile in styles.css, or a live cell lands next to a
+    // bar instead of on one.
+    var CELL = 128, BAR_X = 46, BAR_Y = 61;
+    var COUNT = 6;
+
+    function makeBar() {
+      var el = document.createElement('span');
+      el.className = 'live-bar';
+      live.appendChild(el);
+
+      var timer = 0;
+
+      function place() {
+        var cols = Math.max(1, Math.ceil(window.innerWidth / CELL));
+        var rows = Math.max(1, Math.ceil(window.innerHeight / CELL));
+        el.style.left = (Math.floor(Math.random() * cols) * CELL + BAR_X) + 'px';
+        el.style.top = (Math.floor(Math.random() * rows) * CELL + BAR_Y) + 'px';
+      }
+
+      // Light up, hold, fade — then pick up again somewhere else.
+      function cycle() {
+        place();
+        el.classList.add('on');
+        timer = setTimeout(function () {
+          el.classList.remove('on');
+          timer = setTimeout(cycle, 900 + Math.random() * 2600);
+        }, 1700 + Math.random() * 2400);
+      }
+
+      return {
+        cycle: cycle,
+        stop: function () { clearTimeout(timer); el.classList.remove('on'); },
+        settle: function () { clearTimeout(timer); place(); el.classList.add('on'); }
+      };
+    }
+
+    /* ── can this device afford the layered version? ──
+       Sample real frame intervals once, shortly after load, and drop to the
+       painted-once backdrop if they are not keeping up. Guessing from a UA
+       string or core count would be guessing; this measures the actual
+       machine, on the actual page, including whatever else it is doing. */
+    (function gradeDevice() {
+      if (isReduced()) return;
+      setTimeout(function () {
+        var gaps = [];
+        var last = performance.now();
+        var seen = 0;
+        (function tick(now) {
+          gaps.push(now - last);
+          last = now;
+          if (++seen < 32) return requestAnimationFrame(tick);
+          gaps.sort(function (a, b) { return a - b; });
+          var median = gaps[gaps.length >> 1];
+          // 60Hz is 16.7ms. Past ~22ms the wash is costing visible frames,
+          // and a background is never worth that.
+          if (median > 22) {
+            document.documentElement.classList.add('bg-lite');
+            halt();
+          }
+        })(performance.now());
+      }, 900);   // let load settle first, or we grade the page load
+    })();
+
+    var bars = [];
+    for (var i = 0; i < COUNT; i++) bars.push(makeBar());
+
+    var running = false;
+    function start() {
+      if (running || isReduced() || document.hidden) return;
+      if (document.documentElement.classList.contains('bg-lite')) return;
+      running = true;
+      bars.forEach(function (b, n) {
+        setTimeout(b.cycle, n * 620 + Math.random() * 500);
+      });
+    }
+    function halt() {
+      running = false;
+      bars.forEach(function (b) { b.stop(); });
+    }
+    function settle() {
+      halt();
+      bars.forEach(function (b) { b.settle(); });
+    }
+
+    isReduced() ? settle() : start();
+
+    // Nothing should burn frames in a tab nobody is looking at.
+    document.addEventListener('visibilitychange', function () {
+      if (isReduced()) return;
+      document.hidden ? halt() : start();
+    });
+
+    // Nor while the user is dragging the panel.
+    gesture.onChange = function (on) {
+      if (isReduced()) return;
+      on ? halt() : start();
+    };
+
+    /* ── the wash shifts as you scroll ── */
+    // .blob, not aurora.children — the blobs now live inside the drift layer.
+    var blobs = aurora ? Array.prototype.slice.call(aurora.querySelectorAll('.blob')) : [];
+    var scrollRaf = 0;
+
+    function paintScroll() {
+      scrollRaf = 0;
+      var max = document.documentElement.scrollHeight - window.innerHeight;
+      var p = max > 0 ? clamp(window.scrollY / max, 0, 1) : 0;
+      // Emphasis rotates once through the three colours over the whole page,
+      // so a long scroll never sits under one unchanging wash.
+      for (var n = 0; n < blobs.length; n++) {
+        // Never below 0.4: the emphasis shifts, but no colour drops out
+        // entirely and leaves a stretch of the page plain white again.
+        var k = 0.7 + 0.3 * Math.cos(2 * Math.PI * (p - n / blobs.length));
+        blobs[n].style.opacity = k.toFixed(3);
+      }
+    }
+
+    if (blobs.length && !isReduced()) {
+      window.addEventListener('scroll', function () {
+        if (!scrollRaf) scrollRaf = requestAnimationFrame(paintScroll);
+      }, { passive: true });
+      paintScroll();
+    }
+
+    /* ── and leans a few pixels toward the pointer ── */
+    if (aurora && window.matchMedia('(pointer: fine)').matches) {
+      var paintPointer = function () {
+        aurora.style.transform =
+          'translate3d(' + ax.value.toFixed(2) + 'px,' + ay.value.toFixed(2) + 'px,0)';
+      };
+      // X and Y get their own springs: a single spring over a 2D distance
+      // desyncs as soon as the two axes carry different velocities (§3).
+      var ax = createSpring({
+        value: 0, damping: 1, response: 0.9,
+        restDelta: 0.05, restSpeed: 0.05, onUpdate: paintPointer
+      });
+      var ay = createSpring({
+        value: 0, damping: 1, response: 0.9,
+        restDelta: 0.05, restSpeed: 0.05, onUpdate: paintPointer
+      });
+
+      window.addEventListener('pointermove', function (e) {
+        if (isReduced() || gesture.active) return;
+        // Deliberately tiny. This should register as depth, not as a effect.
+        ax.to((e.clientX / window.innerWidth - 0.5) * 36);
+        ay.to((e.clientY / window.innerHeight - 0.5) * 24);
+      }, { passive: true });
+    }
+
+    var onPref = function () {
+      if (isReduced()) { settle(); if (aurora) aurora.style.transform = ''; }
+      else { start(); paintScroll(); }
+    };
+    reduceMotion.addEventListener
+      ? reduceMotion.addEventListener('change', onPref)
+      : reduceMotion.addListener && reduceMotion.addListener(onPref);
   })();
 
   /* ──────────────────────── the four-turn scrubber ──────────────────── */
@@ -395,6 +575,7 @@
         decided = true;
         if (Math.abs(dx) <= Math.abs(dy)) { pointerDown = false; return; }
         dragging = true;
+        setGesture(true);
         takeOver();
         viewport.classList.add('dragging');
         try { viewport.setPointerCapture(e.pointerId); } catch (err) {}
@@ -421,9 +602,10 @@
       if (!pointerDown && !dragging) { pointerDown = false; return; }
       if (e.pointerId !== activeId) return;
       pointerDown = false;
-      if (!dragging) return;
+      if (!dragging) { setGesture(false); return; }
 
       dragging = false;
+      setGesture(false);
       lastDragEnd = performance.now();
       viewport.classList.remove('dragging');
       try { viewport.releasePointerCapture(e.pointerId); } catch (err) {}
