@@ -9,7 +9,10 @@ site/
   app.js          spring physics + the scrubber
   favicon.svg     the mark (a coverage meter: two live, one draft)
   deploy/         Kubernetes manifests + deploy.sh
+  checks/         Playwright checks — behaviour, contrast, frame cost
 ```
+
+Every measured claim below is reproducible: see [`checks/README.md`](checks/README.md).
 
 Open `index.html` in a browser, or serve it:
 
