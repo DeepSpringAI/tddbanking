@@ -1,7 +1,7 @@
 {
   "name": "tddbanking",
   "description": "Finds the browser behaviour your tests miss, writes tests for all of it, files what is broken as OpenSpec proposals, then develops those proposals test-first. Invokes the tdd skill, OpenSpec and playwright-bdd rather than reimplementing them.",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "author": {
     "name": "DeepSpring",
     "url": "https://github.com/DeepSpringAI"

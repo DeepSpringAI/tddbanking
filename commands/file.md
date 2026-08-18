@@ -39,8 +39,11 @@ Three sources, and all three are in scope:
 Several failing scenarios caused by one broken behaviour are **one** change, not several.
 Group by cause, not by scenario.
 
-For each group, **invoke the Skill tool with `openspec-propose`**, passing what a user cannot
-currently do in user terms, the scenarios, and the evidence path from triage.
+For each group, load `openspec-propose` — try the Skill tool, and if it reports "Unknown
+skill", read `.claude/skills/openspec-propose/SKILL.md` from the project and follow it verbatim.
+Project-scoped skills are frequently not registered for subagents, so expect the second route.
+Pass it what a user cannot currently do in user terms, the scenarios, and the evidence path from
+triage.
 
 Invoke it — do not hand-write the artifacts yourself. Producing a proposal, delta spec, design
 and task list by hand is re-implementing a tool that already does it, and it will drift from
