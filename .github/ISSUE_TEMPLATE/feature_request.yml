@@ -1,0 +1,51 @@
+name: Feature request
+description: Suggest a change to the loop, a turn, or the scenario vocabulary
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before writing: `DESIGN.md` records why the loop is shaped the way it is, including
+        several decisions that look arbitrary and are not — the turn boundaries, and the rule
+        that no turn ranks its own work. If your idea touches those, say why the recorded
+        reasoning does not apply. That is a fine argument to make; it just needs making.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem are you hitting?
+      description: The situation, not the solution. What did you want to do that the loop made hard?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What would you like it to do?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Which part does this touch?
+      multiple: true
+      options:
+        - A command (a turn)
+        - A subagent
+        - The skill — tag vocabulary, triage, writing scenarios
+        - Coverage reporting (bank-stats)
+        - Templates that init copies in
+        - Documentation
+        - Something else
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Have you run into this on a real codebase?
+      description: |
+        Optional, but it carries a lot of weight here. Changes to this repo that came from a real
+        run have held up; changes that only read well on the page have several times been
+        reverted by the next run.

@@ -1,0 +1,73 @@
+name: Bug report
+description: A turn did the wrong thing, a script broke, or the loop got stuck
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Most of this plugin is prompts, so "it did the wrong thing" is a normal and useful bug
+        report — you do not need a stack trace. What helps most is which turn, and what the
+        agents actually did versus what you expected.
+
+  - type: dropdown
+    id: turn
+    attributes:
+      label: Which command?
+      options:
+        - /tddbanking:init
+        - /tddbanking:discover (turn 1)
+        - /tddbanking:implement (turn 2)
+        - /tddbanking:verify (turn 3)
+        - /tddbanking:file (turn 4)
+        - /tddbanking:develop (turn 5)
+        - /tddbanking:status
+        - Installing the plugin
+        - Something else / not sure
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened, and what did you expect instead?
+      description: If an agent produced something wrong, paste the part of its output that shows it.
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: How can we reproduce it?
+      description: |
+        The app you ran it against, roughly — framework, whether it already had Playwright, how
+        the bank was seeded. A public repo we can run it on is ideal but rarely available; a
+        description of the shape is usually enough.
+    validations:
+      required: true
+
+  - type: textarea
+    id: bank-state
+    attributes:
+      label: Bank state
+      description: Output of `node scripts/bank-stats.mjs` (or `npm run bank:stats`), if the bank exists yet.
+      render: text
+
+  - type: input
+    id: version
+    attributes:
+      label: Plugin version
+      description: From `.claude-plugin/plugin.json`, or the tag you installed.
+      placeholder: "0.4.3"
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Node version, OS, and which of the composed tools you have installed (OpenSpec CLI, the `openspec-*` skills, the `tdd` skill, `webapp-testing`).
+      placeholder: |
+        Node 20.11, macOS 15
+        OpenSpec CLI yes, openspec-* skills yes, tdd skill no, webapp-testing yes
+    validations:
+      required: true

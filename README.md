@@ -1,5 +1,8 @@
 # tddbanking
 
+[![test](https://github.com/DeepSpringAI/tddbanking/actions/workflows/test.yml/badge.svg)](https://github.com/DeepSpringAI/tddbanking/actions/workflows/test.yml)
+[![licence: MIT](https://img.shields.io/badge/licence-MIT-blue.svg)](LICENSE)
+
 **Your team writes backend tests. Nobody tests what a user actually does in a browser.**
 
 tddbanking is a Claude Code plugin that closes that gap and keeps it closed. Point it at a web
@@ -367,6 +370,10 @@ permission to stop. Each turn's contract is now completeness.
 
 - [DESIGN.md](DESIGN.md) — why it is shaped this way, including where it deliberately disagrees
   with the `tdd` skill.
+- [CONTRIBUTING.md](CONTRIBUTING.md) — how to run the tests, how to try a change against a real
+  app, and four things that have bitten us.
+- [SECURITY.md](SECURITY.md) — how to report privately, and the two turns that write to your app
+  on purpose.
 - Commands: `init`, `discover`, `implement`, `verify`, `file`, plus read-only `status`.
 - Nothing is vendored. All three upstream projects are referenced by name so they stay current.
 
