@@ -26,13 +26,16 @@ DESIGN.md     why it is shaped this way, including where it disagrees with the t
 ## Running the tests
 
 ```bash
-npm test              # node --test tests/
+npm test              # node --test tests/*.test.mjs
 ```
 
 No install step — there are no dependencies. Node 20 or newer.
 
-The tests resolve fixtures relative to the repo root, so **run them from the repo root**. CI runs
-the same command on Node 20 and 22.
+Two things about that command are deliberate. The tests resolve fixtures relative to the repo
+root, so **run them from the repo root**. And the file list is expanded by the shell rather than
+passed as `tests/` or as a quoted glob: Node 20 does not understand glob patterns after `--test`,
+Node 22 does not accept a bare directory, and an explicit list of paths is the only form both
+agree on. CI runs it on Node 20 and 22 for exactly that reason.
 
 Two other checks worth running by hand:
 
