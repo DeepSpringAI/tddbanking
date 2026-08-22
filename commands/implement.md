@@ -1,9 +1,9 @@
 ---
-description: Turn 2 of 4 - take every reachable draft in the bank live
+description: Turn 2 of 5 - take every reachable draft in the bank live
 argument-hint: optional capability to limit to (default is everything)
 ---
 
-**Turn 2 of the four-turn loop.** Read the `tddbanking` skill and
+**Turn 2 of the five-turn loop.** Read the `tddbanking` skill and
 `${CLAUDE_PLUGIN_ROOT}/skills/tddbanking/writing-scenarios.md` before writing any test code.
 
 **Load the `tdd` skill before writing any test code: invoke the Skill tool with `tdd`.** Do not

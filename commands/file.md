@@ -1,9 +1,9 @@
 ---
-description: Turn 4 of 4 - turn every finding into an OpenSpec change proposal. The loop ends here
+description: Turn 4 of 5 - turn every finding into an OpenSpec change proposal
 argument-hint: optional finding id to limit to (default is all open findings)
 ---
 
-**Turn 4 of five.** This turn requires the OpenSpec CLI.
+**Turn 4 of the five-turn loop.** This turn requires the OpenSpec CLI.
 
 It turns every finding into a change proposal and stops there. It does **not** implement
 anything — turn 5 does that, governed by the `tdd` skill.

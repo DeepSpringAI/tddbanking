@@ -1,9 +1,9 @@
 ---
-description: Turn 3 of 4 - run every live scenario and triage every failure
+description: Turn 3 of 5 - run every live scenario and triage every failure
 argument-hint: optional capability to limit to (default is everything)
 ---
 
-**Turn 3 of the four-turn loop.** Read `${CLAUDE_PLUGIN_ROOT}/skills/tddbanking/triage.md`
+**Turn 3 of the five-turn loop.** Read `${CLAUDE_PLUGIN_ROOT}/skills/tddbanking/triage.md`
 before classifying anything.
 
 **The contract of this turn is that every failure gets a verdict.** Not a re-run, not a

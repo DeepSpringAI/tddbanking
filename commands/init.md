@@ -100,5 +100,5 @@ and ask rather than guessing a port.
    has never gone green is not a scaffold.
 
 Report: what was installed, the scripts added, and that the next step is turn 1,
-`/tddbanking:discover`. Mention that the loop is four turns and ends at `/tddbanking:file` —
+`/tddbanking:discover`. Mention that the loop is five turns and ends at `/tddbanking:develop` —
 it does not run continuously.

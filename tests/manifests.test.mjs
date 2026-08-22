@@ -70,5 +70,26 @@ check('every agent and skill declares a name', missing.noName, []);
 check('the eight agents are all present', readdirSync('agents').filter((f) => f.endsWith('.md')).length, 8);
 check('the seven commands are all present', readdirSync('commands').filter((f) => f.endsWith('.md')).length, 7);
 
+// v0.4.0 added a fifth turn and the command files kept saying "Turn N of 4" for three releases,
+// including init telling every new adopter the loop ended one turn early. The description is
+// what shows in the plugin listing, so it is the first thing anyone reads.
+const TURNS = ['discover', 'implement', 'verify', 'file', 'develop'];
+const numbering = TURNS.map((name, i) => {
+  const fm = frontmatter(`commands/${name}.md`);
+  const m = fm?.description.match(/^Turn (\d+) of (\d+)\b/);
+  return m ? `${name}:${m[1]}/${m[2]}` : `${name}:unnumbered`;
+});
+check(
+  'each turn declares its own position out of five',
+  numbering,
+  TURNS.map((name, i) => `${name}:${i + 1}/${TURNS.length}`),
+);
+// Only the last turn ends the loop. file.md claimed it did too, while its own body said otherwise.
+check(
+  'only the final turn says the loop ends here',
+  TURNS.filter((n) => /loop ends here/i.test(frontmatter(`commands/${n}.md`).description)),
+  ['develop'],
+);
+
 console.log(failures ? `\n${failures} FAILED` : '\nall passed');
 process.exit(failures ? 1 : 0);

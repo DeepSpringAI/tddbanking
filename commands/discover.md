@@ -1,9 +1,9 @@
 ---
-description: Turn 1 of 4 - discover every scenario the bank is missing, probe reachability, report coverage
+description: Turn 1 of 5 - discover every scenario the bank is missing, probe reachability, report coverage
 argument-hint: optional capability or area to focus on
 ---
 
-**Turn 1 of the four-turn loop.** Read the `tddbanking` skill first.
+**Turn 1 of the five-turn loop.** Read the `tddbanking` skill first.
 
 This turn finds what should be tested and whether it *can* be tested. It writes no step
 definitions and no application code, and it ends by handing you to turn 2.

@@ -374,7 +374,8 @@ permission to stop. Each turn's contract is now completeness.
   app, and four things that have bitten us.
 - [SECURITY.md](SECURITY.md) — how to report privately, and the two turns that write to your app
   on purpose.
-- Commands: `init`, `discover`, `implement`, `verify`, `file`, plus read-only `status`.
+- Commands: `init`, then the five turns — `discover`, `implement`, `verify`, `file`, `develop` —
+  plus read-only `status`.
 - Nothing is vendored. All three upstream projects are referenced by name so they stay current.
 
 ## Licence
