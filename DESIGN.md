@@ -227,3 +227,146 @@ scenarios banked, then all tests written. `SKILL.md` states where that objection
 it does not, rather than pretending the tension is absent. In backfill mode there is no
 implementation to slice and completeness is the point; the objection bites at *imagined*
 behavior, which is what the evidence rule and reachability probing exist to prevent.
+
+---
+
+# v0.4.0 — the loop ends in working code
+
+## Why there is a fifth turn
+
+Through v0.3 the loop ended at turn 4 with a pile of proposals. That was defensible — filing is a
+clean boundary, and this plugin does not own the codebase it audits — but it left the most
+valuable half of the premise unclaimed. Every filed change already ships its failing scenario,
+and that scenario *is* the red half of red-green, written down and agreed. Stopping there throws
+away the one artifact that makes test-first development cheap.
+
+Turn 5 takes each change to green without touching the assertion. The `@known-defect` tag coming
+off is the definition of done, so the test that proves the fix is the same test that proved the
+bug. It is the only turn that writes application code, so it confirms scope before it starts and
+works one worktree per change.
+
+The loop still ends deliberately. Turn 5 is terminal and nothing restarts itself.
+
+## Why every external skill is invoked by name
+
+A diagnostic put the odds that a turn-2 agent actually loaded the `tdd` skill at about one in
+three. The mechanism was never at fault — `Skill(tdd)` resolves first try, and subagents do get
+the skill listing. The prompting defeated it, in three compounding ways, and the largest was
+self-inflicted.
+
+"If it is available" reads as permission to skip, especially beside a fully resolved path in the
+same sentence. The agent body **paraphrased the skill's operative lesson**, so an agent handed
+the conclusion had no reason to fetch the source. And the skill describes itself as being about
+test-first development while the agent is told it is backfilling and that a green first run is
+not a violation — so it reads as not applying.
+
+Naming the mechanism, pre-empting that task-shape objection, and moving every paraphrase into an
+explicit "if the skill is missing" fallback took compliance to roughly 0.8–0.9. **Paraphrase is
+the dominant suppressor**, and that is the part worth carrying elsewhere: restating a rule
+accurately is precisely what stops anyone reading it.
+
+The same disease was everywhere. `file.md` said "invoke the `openspec-propose` skill" with no
+mechanism named, and the acceptance test duly hand-wrote all six change artifacts instead of
+calling it. Turn 4 now defers the artifact format to `openspec instructions` rather than to a
+table here that ages.
+
+## Why compliance has to be reported, not assumed
+
+Only the absence case had to be reported, so an agent that quietly skipped a skill produced
+output byte-identical to one that loaded it. A regression could not be detected without re-running
+the diagnostic by hand.
+
+Every skill-invoking agent now returns a required `SKILLS:` line saying which route it took. An
+agent that must report the fact is also materially more likely to perform it — and without that
+line, the turn-5 finding below could not have been seen at all.
+
+## v0.4.1 — a source is an artifact, not a file type
+
+"One extractor per document class" let two agents read different files of the same OpenSpec
+change and then appear to corroborate each other. On a 12-agent run, 52 of 74 corroborations were
+that artifact — 70% of the total, and roughly 148k tokens of duplicated reading.
+
+A source is now defined as **one artifact that speaks with one voice**, not one file type, and
+splitting an artifact across agents is named as manufacturing false confidence rather than saving
+time. Corroboration is reported per pair, and any pair whose members share a modality is flagged
+as probably-one-source.
+
+That reporting change exposed a bug in the first attempt at it: keying pairs by tag prefix
+collapses two `@from-story` sources into one, which would have made the very case above
+invisible. Pairs are keyed by the full source tag. This is the same lesson as counting coverage —
+the convenient key is the one that hides the failure you built the metric for.
+
+**Novelty is counted separately from volume**, because they turned out to be inversely
+correlated. By volume the app-crawl modality ranked last, while producing an entire authorization
+cluster with 17 of its 18 findings predicted by no document. Only volume was being measured.
+
+Coverage prints `52 live / 58 banked (90%)` rather than a bare percentage. After a discovery
+turn, `COVERAGE: 0%` reads as failure when it means nothing has been implemented yet — the same
+discouragement the ranked queue used to cause.
+
+## v0.4.2 — pinning what we paraphrase
+
+A missing or renamed skill already fails loudly, through the `SKILLS: MISSING` line and turn 5's
+hard stop. The unguarded case is the quiet one: **a skill that loads perfectly while a rule
+inside it has changed**, leaving our fallback paraphrase describing something nobody says any
+more. Nothing is missing, so no missing-skill check can fire.
+
+`upstream-skills.json` pins each skill by content hash, together with the rules this plugin
+characterises and every file that restates them, so drift names its own remediation.
+
+Verifying the pin immediately found drift, and reading it was the point: upstream changed "use
+the `/codebase-design` skill" to "call the Skill tool with `codebase-design`" — the same fix this
+plugin made, for the same reason, touching no rule we describe. It is recorded as a
+known-equivalent hash *with the diff explained*. That list is a record that someone read the
+diff, not a way to mute the check.
+
+**Deliberately not vendored.** A copy stops receiving its author's improvements and becomes a
+fork nobody maintains, which defeats the reason for building on it.
+
+## v0.4.3 — what parallel development actually costs
+
+Turn 5's first real run took six filed changes to green in parallel worktrees, 52 pass / 6 fail
+to 58 pass / 0 fail. Most of what it taught is about parallelism, not about testing.
+
+**A worktree isolates files, not the running app.** Each developer needs its own instance and
+port, and agents did not know to check they owned theirs. A leftover process — from a sibling, or
+from an earlier attempt of their own that died — holds the port; the new server falls back
+silently and exits on `EADDRINUSE` while the old one keeps serving. One run was nearly
+invalidated that way.
+
+**Orphan cleanup by directory match is not safe**, and proving it took down two live agents
+mid-run. A directory does not tell you whether an agent is still working. Kill only processes
+belonging to agents known to have finished, and ask a running agent to restart its own server
+rather than doing it for them.
+
+**Transient failures cluster.** Four of six agents died on 529s in a single dispatch. A killed
+agent leaves a worktree and branch to reuse rather than recreate, and leaves servers holding its
+ports — so retry in smaller batches.
+
+And the finding only the `SKILLS:` line could have surfaced: **project-scoped skills are not
+registered for subagents.** The `openspec-*` skills are generated per project into
+`.claude/skills/`, so every developer got "Unknown skill" and recovered by reading the file
+verbatim. That route is now documented as expected rather than as a workaround.
+
+## v0.4.4 — what a public repo needs
+
+Everything above was written while the repository was private, which turns out to be a
+distinguishable state. The scaffolding a stranger needs — CI on its own tests, a discoverable
+test command, contribution and security policy — was absent, and the absence was invisible to
+everyone who already knew how the thing worked.
+
+Two of those are worth recording as design decisions rather than chores.
+
+**Structural checks live in a test, not in `claude plugin validate`.** Validation covers the
+marketplace manifest, is unavailable in CI, and does not parse frontmatter — only `claude plugin
+tag` does. So an agent that loses its `description:` validates clean and shows up nameless in the
+plugin list. `tests/manifests.test.mjs` covers what validation cannot, and now holds the single
+source of truth for the version across four files.
+
+**The turn count is asserted, because proofreading demonstrably failed at it.** v0.4.0 added a
+fifth turn and four command files went on announcing "Turn N of 4" for three releases. The
+costly instance was `init.md` telling every new adopter that the loop "ends at
+`/tddbanking:file`" — so turn 5, the turn that fixes what the other four found, was invisible to
+exactly the people who had just installed the plugin. That is the third time in this document
+that a hand-maintained count drifted; the rule by now is that if a number appears in two places,
+a test owns it.

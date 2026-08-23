@@ -1,6 +1,6 @@
 {
   "name": "tddbanking",
-  "version": "0.4.3",
+  "version": "0.4.4",
   "private": true,
   "description": "Finds the browser behaviour your tests miss, writes tests for all of it, files what is broken as OpenSpec proposals, then develops those proposals test-first.",
   "homepage": "https://github.com/DeepSpringAI/tddbanking",
