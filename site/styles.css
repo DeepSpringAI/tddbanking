@@ -1,0 +1,1078 @@
+/* ============================================================================
+   tddbanking — marketing site
+   Zero dependencies, no build step. One stylesheet, system font, light canvas.
+
+   Colour: every text value below clears WCAG AA (>= 4.5:1) against all three
+   canvases used on the page (#fff, #f5f5f7, #fbfbfd). Verified, not guessed —
+   #0071e3 and #6e6e73 were rejected because they fall to 4.31 and 4.42 on the
+   grey band.
+
+   Motion: transform/opacity only. Springs live in app.js; CSS handles the
+   non-interruptible things (press feedback, scroll reveals) and nothing else.
+   ========================================================================== */
+
+/* ─────────────────────────────── tokens ─────────────────────────────── */
+:root {
+  --ink:        #1d1d1f;   /* 15.5:1 worst case */
+  --ink-2:      #515154;   /*  7.3:1 */
+  --ink-3:      #55555d;   /*  5.2:1 on the darkest measured backdrop */
+  --accent:     #0a5bd3;   /*  5.6:1 · white on it: 6.1:1 */
+  --accent-ink: #0847a8;   /* pressed / hover */
+  --accent-wash:#eef3fd;
+  --pass:       #1a7f37;   /*  4.7:1 */
+  --fail:       #b32219;   /*  6.1:1 */
+  --draft:      #7a5610;   /*  6.1:1 */
+  --code-cmt:   #5f6b77;   /*  5.0:1 */
+
+  --canvas:     #ffffff;
+  --canvas-alt: #f5f5f7;
+  --surface:    #fbfbfd;
+  --hair:       rgba(0, 0, 0, 0.10);
+  --hair-soft:  rgba(0, 0, 0, 0.06);
+
+  --shadow-sm:  0 1px 2px rgba(0,0,0,.05), 0 1px 1px rgba(0,0,0,.04);
+  /* Bigger surfaces read as thicker: more blur, deeper shadow (apple-design §12) */
+  --shadow-lg:  0 2px 6px rgba(0,0,0,.05), 0 12px 32px rgba(0,0,0,.08);
+
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto,
+          system-ui, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+          "Liberation Mono", monospace;
+
+  --wrap: 68rem;
+  --gutter: clamp(1.25rem, 4vw, 2.5rem);
+  --nav-h: 3.5rem;
+
+  /* Every rhythm value is a multiple of 0.25rem — nothing here is arbitrary. */
+  --s-1: .25rem;  --s-2: .5rem;   --s-3: .75rem;  --s-4: 1rem;
+  --s-6: 1.5rem;  --s-8: 2rem;    --s-12: 3rem;   --s-16: 4rem;
+  --band-y: clamp(4rem, 9vw, 7.5rem);
+
+  --r-sm: .5rem; --r-md: .875rem; --r-lg: 1.25rem; --r-xl: 1.75rem;
+}
+
+/* ─────────────────────────────── base ───────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  /* Spacing is in rem throughout, so the layout scales *with* the user's
+     text-size setting rather than breaking under it (apple-design §15). */
+  font: 100%/1.5 var(--font);
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+  scroll-padding-top: calc(var(--nav-h) + 1rem);
+  /* The page colour lives here, not on body: the background layer sits at
+     z-index -1, which paints above the canvas but below any block background.
+     An opaque body would hide it entirely. */
+  background: var(--canvas);
+}
+
+body {
+  margin: 0;
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: 1.0625rem;
+  line-height: 1.6;
+  letter-spacing: 0;            /* body sits at 0 tracking; only display type is tightened */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+
+img, svg { display: block; max-width: 100%; }
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { color: var(--accent-ink); text-decoration: underline; text-underline-offset: .18em; }
+
+code, pre, .mono { font-family: var(--mono); font-size: .9375em; font-variant-ligatures: none; }
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+
+.skip {
+  position: absolute; left: -9999px; top: 0; z-index: 200;
+  background: var(--ink); color: #fff; padding: var(--s-3) var(--s-4);
+  border-radius: 0 0 var(--r-sm) 0;
+}
+.skip:focus { left: 0; }
+
+.wrap { max-width: var(--wrap); margin-inline: auto; padding-inline: var(--gutter); }
+
+/* ───────────────────────────── background ──────────────────────────── */
+/* Fixed to the viewport, so scrolling costs nothing to repaint and the page
+   reads as content moving over a surface rather than a mural sliding past.
+   Everything here animates transform and opacity only.
+
+   The whole layer is deliberately faint. Text sits on top of it, and the
+   palette's AA margins were measured against #fff / #f5f5f7 — a background
+   that darkened much past that would quietly spend those margins. */
+.bg {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.bg-aurora {
+  position: absolute;
+  inset: 0;
+  will-change: transform;
+}
+
+/* One drifting layer, not three.
+   Measured: animating each blob separately — and scaling them — cost 50ms a
+   frame under software rendering, because scaling a ~1100px translucent
+   gradient re-rasterises it every frame. Translating a single composited
+   layer is a blit. Same ambient motion, a fraction of the cost. */
+.bg-drift {
+  position: absolute;
+  inset: 0;
+  will-change: transform;
+  animation: drift 96s ease-in-out infinite alternate;
+}
+
+/* Far below the ~0.2 Hz band that reads as an uncomfortable pulse. */
+@keyframes drift {
+  from { transform: translate3d(0, 0, 0); }
+  to   { transform: translate3d(-6vw, 4vh, 0); }
+}
+
+/* Radial gradients with a soft falloff, rather than filter: blur() on a solid
+   — same look, without a full-surface blur pass every frame. The static poses
+   below are the composition; only the parent moves. */
+.blob {
+  position: absolute;
+  display: block;
+  border-radius: 50%;
+  will-change: opacity;   /* the scroll rotation; transform is the parent's job */
+}
+
+.blob-accent {
+  width: 78vw; height: 78vw;
+  min-width: 40rem; min-height: 40rem;
+  right: -22vw; top: -38vw;
+  background: radial-gradient(circle at 50% 50%,
+    rgba(10, 91, 211, .30), rgba(10, 91, 211, .12) 42%, rgba(10, 91, 211, 0) 68%);
+}
+
+.blob-pass {
+  width: 66vw; height: 66vw;
+  min-width: 34rem; min-height: 34rem;
+  left: -26vw; top: 14vh;
+  background: radial-gradient(circle at 50% 50%,
+    rgba(26, 127, 55, .22), rgba(26, 127, 55, .08) 44%, rgba(26, 127, 55, 0) 70%);
+}
+
+.blob-draft {
+  width: 60vw; height: 60vw;
+  min-width: 30rem; min-height: 30rem;
+  right: -6vw; bottom: -38vw;
+  background: radial-gradient(circle at 50% 50%,
+    rgba(122, 86, 16, .22), rgba(122, 86, 16, .08) 44%, rgba(122, 86, 16, 0) 70%);
+}
+
+/* The wash can be rich at the edges and still leave text on a bright surface,
+   because the content column is only ever in the middle. This veil brightens
+   that middle and fades to nothing well before the edges — wide and soft
+   enough to read as vignetting rather than as a stripe.
+
+   This is what buys the colour: without it every text colour would have to
+   clear AA against the darkest point of the wash, which caps the wash at
+   almost nothing. Measured worst case with it: 4.86:1. */
+.bg-veil {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to right,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, .50) 15%,
+    rgba(255, 255, 255, .74) 38%,
+    rgba(255, 255, 255, .74) 62%,
+    rgba(255, 255, 255, .50) 85%,
+    rgba(255, 255, 255, 0) 100%);
+}
+
+/* A field of the same rounded bar the mark is built from. One SVG tile, so
+   the whole texture costs zero DOM nodes. */
+.bg-grid {
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='128' height='128'%3E%3Crect x='46' y='61' width='36' height='6' rx='3' fill='%23000' fill-opacity='.042'/%3E%3C/svg%3E");
+  background-size: 128px 128px;
+  background-position: 0 0;
+  /* Two masks: a vignette so it reads as texture rather than graph paper, and
+     a horizontal fade that thins it out through the middle — which is exactly
+     where the content column sits. Texture belongs in the margins. */
+  -webkit-mask-image:
+    radial-gradient(ellipse 120% 95% at 50% 38%, #000 20%, rgba(0, 0, 0, .5) 66%, transparent 94%),
+    linear-gradient(to right, #000 0%, rgba(0, 0, 0, .22) 22%, rgba(0, 0, 0, .22) 78%, #000 100%);
+  -webkit-mask-composite: source-in;
+  mask-image:
+    radial-gradient(ellipse 120% 95% at 50% 38%, #000 20%, rgba(0, 0, 0, .5) 66%, transparent 94%),
+    linear-gradient(to right, #000 0%, rgba(0, 0, 0, .22) 22%, rgba(0, 0, 0, .22) 78%, #000 100%);
+  mask-composite: intersect;
+}
+
+/* The low-cost path.
+   Three viewport-sized translucent gradient layers are close to free on a GPU
+   and expensive to composite in software — measured here at ~17ms a frame
+   just by existing, animated or not. app.js samples the frame rate once on
+   load and sets this class if the device cannot keep up, trading the layered
+   wash for the same composition painted once onto the fixed backdrop. Same
+   colours, no layers, no animation, nothing per frame. */
+.bg-lite .bg {
+  background-image:
+    radial-gradient(58rem 44rem at 88% -12%, rgba(10, 91, 211, .17), rgba(10, 91, 211, 0) 70%),
+    radial-gradient(50rem 38rem at -10% 40%, rgba(26, 127, 55, .13), rgba(26, 127, 55, 0) 70%),
+    radial-gradient(44rem 34rem at 98% 112%, rgba(122, 86, 16, .13), rgba(122, 86, 16, 0) 70%);
+}
+.bg-lite .bg-aurora,
+.bg-lite .bg-live { display: none; }
+
+/* Same centre fade as the field: a cell going live is a nice detail in the
+   margin and a distraction directly behind a paragraph. */
+.bg-live {
+  position: absolute;
+  inset: 0;
+  -webkit-mask-image:
+    linear-gradient(to right, #000 0%, rgba(0, 0, 0, .12) 24%, rgba(0, 0, 0, .12) 76%, #000 100%);
+  mask-image:
+    linear-gradient(to right, #000 0%, rgba(0, 0, 0, .12) 24%, rgba(0, 0, 0, .12) 76%, #000 100%);
+}
+
+/* One cell of the field going live. Same geometry as the tile above, so it
+   lands exactly on a bar rather than near one. */
+/* A CSS transition, not a spring. Nothing here can be grabbed mid-flight, so
+   a spring buys nothing and costs a rAF loop each — measured at ~17ms a frame
+   across six of them. Springs are for what the user can touch. */
+.live-bar {
+  position: absolute;
+  width: 36px;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--accent);
+  opacity: 0;
+  transform: scaleX(.35);
+  transform-origin: 0 50%;
+  will-change: transform, opacity;
+  transition: opacity 620ms cubic-bezier(.16, .84, .28, 1),
+              transform 620ms cubic-bezier(.16, .84, .28, 1);
+}
+.live-bar.on { opacity: .24; transform: scaleX(1); }
+
+/* ───────────────────────── typography scale ─────────────────────────── */
+/* Tracking is size-specific: large type is tightened, small type is opened up.
+   A single letter-spacing would be wrong somewhere (apple-design §15). */
+
+.display {
+  margin: 0 0 var(--s-6);
+  font-size: clamp(2.5rem, 6.2vw, 4.25rem);
+  line-height: 1.04;            /* leading tightens as size grows */
+  letter-spacing: -0.035em;
+  font-weight: 700;
+  text-wrap: balance;
+}
+
+h2 {
+  margin: 0 0 var(--s-6);
+  font-size: clamp(1.875rem, 3.6vw, 2.75rem);
+  line-height: 1.1;
+  letter-spacing: -0.026em;
+  font-weight: 700;
+  max-width: 22ch;
+  text-wrap: balance;
+}
+.closer h2, .band-alt#knowing h2 { max-width: 26ch; }
+
+h3 {
+  margin: 0 0 var(--s-3);
+  font-size: 1.1875rem;
+  line-height: 1.3;
+  letter-spacing: -0.014em;
+  font-weight: 600;
+}
+
+.eyebrow {
+  margin: 0 0 var(--s-4);
+  font-size: .8125rem;
+  font-weight: 600;
+  letter-spacing: 0.075em;      /* small type gets *positive* tracking */
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.lede {
+  margin: 0 0 var(--s-6);
+  max-width: 60ch;
+  font-size: clamp(1.0625rem, 1.55vw, 1.3125rem);
+  line-height: 1.55;
+  letter-spacing: -0.008em;
+  color: var(--ink-2);
+}
+.lede strong { color: var(--ink); font-weight: 600; }
+.lede-dim { color: var(--ink-3); font-size: 1.0625rem; }
+.lede-tight { margin-bottom: var(--s-4); }
+
+p { margin: 0 0 var(--s-4); }
+p:last-child { margin-bottom: 0; }
+
+.aside {
+  margin: var(--s-12) 0 0;
+  max-width: 62ch;
+  color: var(--ink-3);
+  font-size: 1rem;
+  padding-left: var(--s-4);
+  border-left: 2px solid var(--hair);
+}
+
+/* ─────────────────────────────── nav ────────────────────────────────── */
+/* A translucent layer the page scrolls *under* — not an opaque strip that
+   eats a fixed band of the viewport (apple-design §12). */
+.nav {
+  position: fixed; inset: 0 0 auto; z-index: 100;
+  height: var(--nav-h);
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  /* Scroll edge effect, not a hard divider: the separation fades in only once
+     content is actually underneath the chrome. */
+  box-shadow: 0 1px 0 rgba(0,0,0,0);
+  transition: box-shadow 240ms ease, background-color 240ms ease;
+}
+.nav.scrolled {
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 1px 0 var(--hair-soft), 0 6px 20px rgba(0,0,0,.045);
+}
+
+.nav-inner {
+  max-width: var(--wrap); margin-inline: auto; padding-inline: var(--gutter);
+  height: 100%; display: flex; align-items: center; gap: var(--s-6);
+}
+
+.wordmark { display: flex; align-items: center; gap: .5rem; color: var(--ink); }
+.wordmark:hover { text-decoration: none; }
+.mark { width: 1.5rem; height: 1.5rem; border-radius: .36rem; flex: none; }
+.mark-sm { width: 1.25rem; height: 1.25rem; }
+.wordmark-text { font-size: 1.0625rem; letter-spacing: -0.022em; }
+.wm-a { color: var(--accent); font-weight: 700; }
+.wm-b { color: var(--ink); font-weight: 500; }
+
+.nav-links { display: flex; gap: var(--s-6); margin-left: auto; }
+.nav-links a {
+  color: var(--ink-2); font-size: .875rem; letter-spacing: -0.004em;
+  transition: color 140ms ease;
+}
+.nav-links a:hover { color: var(--ink); text-decoration: none; }
+.nav-cta { margin-left: var(--s-2); }
+
+@media (max-width: 52rem) {
+  .nav-links { display: none; }
+  .nav-cta { margin-left: auto; }
+}
+
+/* ───────────────────────────── buttons ──────────────────────────────── */
+/* Feedback lives on the press and is instant — never waiting for release
+   (apple-design §1). */
+.btn {
+  display: inline-flex; align-items: center; gap: .4rem;
+  padding: .625rem 1.125rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: .9375rem; font-weight: 500; letter-spacing: -0.006em;
+  cursor: pointer;
+  transition: background-color 140ms ease, color 140ms ease,
+              border-color 140ms ease, transform 110ms ease-out;
+  touch-action: manipulation;
+  user-select: none;
+}
+.btn:hover { text-decoration: none; }
+.btn:active { transform: scale(0.97); }
+
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: var(--accent-ink); color: #fff; }
+
+.btn-ghost { background: transparent; color: var(--accent); border-color: var(--hair); }
+.btn-ghost:hover { background: var(--accent-wash); border-color: transparent; color: var(--accent-ink); }
+
+.arrow { font-size: .85em; opacity: .75; }
+
+/* ─────────────────────────────── hero ───────────────────────────────── */
+.hero {
+  padding-top: calc(var(--nav-h) + clamp(3.5rem, 9vw, 7rem));
+  padding-bottom: clamp(3.5rem, 8vw, 6.5rem);
+}
+.hero .lede { max-width: 56ch; }
+
+.hero-actions { display: flex; flex-wrap: wrap; gap: var(--s-3); margin-top: var(--s-8); }
+
+.hero-copy { margin-top: var(--s-8); max-width: 34rem; }
+
+/* ─────────────────────── copy-to-clipboard line ─────────────────────── */
+.copyline {
+  display: flex; align-items: center; gap: var(--s-3);
+  padding: .6875rem .6875rem .6875rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--hair-soft);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: var(--s-3);
+}
+.copyline:last-child { margin-bottom: 0; }
+.copyline code {
+  flex: 1 1 auto; min-width: 0;
+  font-size: .875rem; color: var(--ink);
+  overflow-x: auto; white-space: nowrap;
+  scrollbar-width: none;
+}
+.copyline code::-webkit-scrollbar { display: none; }
+.copyline .sh { color: var(--accent); font-weight: 600; }
+/* On a phone the command is wider than the screen, and a command you have to
+   scroll to read is a command you will mistype. Let it wrap instead. */
+@media (max-width: 40rem) {
+  .copyline { align-items: flex-start; }
+  .copyline code {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    overflow-x: visible;
+  }
+}
+
+/* A caption under the line, never beside it: sharing the row meant the note
+   could squeeze the command, and the command is the whole point. */
+.copyline-note {
+  margin: calc(-1 * var(--s-1)) 0 var(--s-4) .25rem;
+  font-size: .8125rem; color: var(--ink-3); letter-spacing: .004em;
+}
+
+.copybtn {
+  flex: none;
+  min-width: 4.25rem;
+  padding: .375rem .75rem;
+  font: inherit; font-size: .8125rem; font-weight: 600; letter-spacing: .01em;
+  color: var(--ink-2);
+  background: #fff;
+  border: 1px solid var(--hair);
+  border-radius: .5rem;
+  cursor: pointer;
+  transition: background-color 140ms ease, color 140ms ease,
+              border-color 140ms ease, transform 110ms ease-out;
+}
+.copybtn:hover { color: var(--ink); border-color: rgba(0,0,0,.18); }
+.copybtn:active { transform: scale(0.94); }
+/* Completion feedback — the button states the outcome, then returns. */
+.copybtn.copied {
+  color: var(--pass);
+  border-color: color-mix(in srgb, var(--pass) 35%, transparent);
+  background: color-mix(in srgb, var(--pass) 8%, #fff);
+}
+
+/* ─────────────────────────────── bands ─────────────────────────────── */
+.band { padding-block: var(--band-y); }
+/* Translucent rather than solid #f5f5f7, so the background layer carries
+   through the grey bands instead of being switched off every other section.
+   Composites to ~#f5f5f6 over white — the value the palette was measured on. */
+.band-alt { background: rgba(20, 22, 45, .042); }
+.closer {
+  padding-block: clamp(4rem, 9vw, 7rem);
+  background: transparent;
+  border-top: 1px solid var(--hair-soft);
+  text-align: center;
+}
+.closer h2 { margin-inline: auto; }
+.closer .hero-actions { justify-content: center; }
+
+/* ─────────────────────────────── cards ─────────────────────────────── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--hair-soft);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.grid-3 {
+  display: grid; gap: var(--s-4);
+  grid-template-columns: repeat(3, 1fr);
+  margin-top: var(--s-8);
+}
+.grid-2 {
+  display: grid; gap: var(--s-4);
+  grid-template-columns: repeat(2, 1fr);
+  margin-top: var(--s-8);
+}
+@media (max-width: 56rem) { .grid-3, .grid-2 { grid-template-columns: 1fr; } }
+
+.mode, .dep { padding: var(--s-6); }
+.mode p, .dep p { color: var(--ink-2); font-size: 1rem; }
+.mode-tag {
+  margin-top: var(--s-4); padding-top: var(--s-4);
+  border-top: 1px solid var(--hair-soft);
+  color: var(--ink-3) !important; font-size: .9375rem !important;
+}
+.dep h3 a { color: var(--ink); }
+.dep h3 a:hover { color: var(--accent); text-decoration: none; }
+.dep h3 code { font-size: .95em; }
+.dep-by { color: var(--ink-3) !important; font-size: .875rem !important; margin-bottom: var(--s-3) !important; }
+/* Where in the cycle this one does its work — the credit is more useful with
+   the step attached than without it. */
+.dep-step {
+  display: block;
+  margin-top: .2rem;
+  font-size: .8125rem;
+  font-style: italic;
+  color: var(--accent);
+}
+
+.know h3 { font-size: 1.3125rem; letter-spacing: -0.018em; max-width: 24ch; }
+.know p { color: var(--ink-2); max-width: 46ch; }
+
+/* ─────────────────────────── code surfaces ─────────────────────────── */
+.code-card { overflow: hidden; }
+.card-bar {
+  display: flex; align-items: center; gap: .375rem;
+  padding: .625rem .875rem;
+  background: rgba(0,0,0,.025);
+  border-bottom: 1px solid var(--hair-soft);
+}
+.dot { width: .5rem; height: .5rem; border-radius: 50%; background: rgba(0,0,0,.14); }
+.card-name {
+  margin-left: .5rem; font-family: var(--mono);
+  font-size: .75rem; color: var(--ink-3); letter-spacing: .01em;
+}
+
+.code {
+  margin: 0; padding: var(--s-4) var(--s-4) var(--s-6);
+  font-family: var(--mono); font-size: .8125rem; line-height: 1.65;
+  color: var(--ink);
+  overflow-x: auto; tab-size: 2;
+  white-space: pre;
+}
+@media (min-width: 56rem) { .code { font-size: .84375rem; } }
+
+.c-kw    { color: var(--accent); font-weight: 600; }
+.c-tag   { color: var(--ink-3); }
+.c-cmt   { color: var(--code-cmt); font-style: italic; }
+.c-str   { color: var(--pass); }
+.c-dim   { color: var(--ink-3); }
+.c-pass  { color: var(--pass); font-weight: 600; }
+.c-fail  { color: var(--fail); font-weight: 600; }
+.c-draft {
+  color: var(--draft); font-weight: 700;
+  background: color-mix(in srgb, var(--draft) 12%, transparent);
+  border-radius: .25rem; padding: 0 .25rem; margin: 0 -.1rem;
+}
+/* Diff lines are explicit blocks with no newlines between them in the source —
+   inside a <pre>, a stray newline after a block box renders as a blank line. */
+.ln    { display: block; }
+.c-del { color: var(--fail); display: block; background: color-mix(in srgb, var(--fail) 7%, transparent); }
+.c-add { color: var(--pass); display: block; background: color-mix(in srgb, var(--pass) 8%, transparent); }
+
+/* ───────────────────────────── scrubber ────────────────────────────── */
+.scrubber { margin-top: var(--s-12); }
+
+.tabs {
+  position: relative;
+  display: flex; gap: var(--s-1);
+  padding: var(--s-1);
+  background: var(--canvas-alt);
+  border-radius: 999px;
+  width: fit-content;
+  max-width: 100%;
+  margin-bottom: var(--s-6);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.band-alt .tabs { background: #fff; }
+.tabs::-webkit-scrollbar { display: none; }
+
+/* The moving highlight. Its transform is driven by a spring in app.js so it
+   can be grabbed and re-aimed mid-flight — never a CSS transition. */
+.tab-thumb {
+  position: absolute; left: 0; top: var(--s-1);
+  height: calc(100% - var(--s-2));
+  width: 1px;
+  background: #fff;
+  border: 1px solid var(--hair-soft);
+  border-radius: 999px;
+  box-shadow: var(--shadow-sm);
+  transform-origin: 0 50%;
+  will-change: transform;
+  pointer-events: none;
+}
+.band-alt .tab-thumb { background: var(--canvas-alt); }
+.no-js .tab-thumb { display: none; }
+
+.tab {
+  position: relative; z-index: 1;
+  display: inline-flex; align-items: center; gap: .45rem;
+  padding: .5rem 1rem;
+  border: 0; background: transparent;
+  border-radius: 999px;
+  font: inherit; font-size: .9375rem; font-weight: 500;
+  letter-spacing: -0.006em;
+  color: var(--ink-3);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color 160ms ease, transform 110ms ease-out;
+}
+.tab:active { transform: scale(0.96); }
+.tab[aria-selected="true"] { color: var(--ink); font-weight: 600; }
+.tab-n {
+  display: inline-grid; place-items: center;
+  width: 1.25rem; height: 1.25rem;
+  border-radius: 50%;
+  background: rgba(0,0,0,.07);
+  font-size: .6875rem; font-weight: 700; letter-spacing: 0;
+  transition: background-color 160ms ease, color 160ms ease;
+}
+.tab[aria-selected="true"] .tab-n { background: var(--accent); color: #fff; }
+
+.viewport {
+  overflow: hidden;
+  border-radius: var(--r-xl);
+  /* Vertical page scroll stays native; horizontal is ours to interpret. */
+  touch-action: pan-y;
+  cursor: grab;
+}
+.viewport.dragging { cursor: grabbing; }
+.no-js .viewport { overflow: visible; cursor: auto; }
+
+.track {
+  display: flex;
+  align-items: stretch;      /* every panel is as tall as the tallest — no jump */
+  will-change: transform;
+}
+.no-js .track { display: block; }
+
+.panel {
+  flex: 0 0 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(1.5rem, 4vw, 3rem);
+  /* Panels are all as tall as the tallest so the surface never resizes under
+     the gesture; centring means a short panel splits its slack top and bottom
+     instead of pooling it all underneath. */
+  align-items: center;
+  padding: clamp(1.5rem, 3.5vw, 2.75rem);
+  background: var(--surface);
+  border: 1px solid var(--hair-soft);
+  border-radius: var(--r-xl);
+  box-shadow: var(--shadow-lg);
+}
+.band-alt .panel { background: #fff; }
+.no-js .panel { margin-bottom: var(--s-4); }
+@media (max-width: 56rem) { .panel { grid-template-columns: 1fr; } }
+
+/* A grid/flex item defaults to min-width:auto, so a <pre> with long lines
+   refuses to shrink and pushes its column wider than the panel. The code
+   should scroll inside its card; the card should fit its column. */
+.panel > *, .split > *, .grid-3 > *, .grid-2 > * { min-width: 0; }
+
+.panel-text h3 {
+  font-size: clamp(1.25rem, 2.2vw, 1.625rem);
+  line-height: 1.24;
+  letter-spacing: -0.02em;
+  margin-bottom: var(--s-4);
+  max-width: 20ch;
+}
+.panel-text p { color: var(--ink-2); }
+.panel-text strong { color: var(--ink); font-weight: 600; }
+.panel-text .note {
+  margin-top: var(--s-4); padding-top: var(--s-4);
+  border-top: 1px solid var(--hair-soft);
+  font-size: .9375rem; color: var(--ink-3);
+}
+.panel-text .note code { color: var(--ink-2); }
+
+/* Contents are dragged as one surface — text selection would fight the gesture. */
+.js .panel { user-select: none; -webkit-user-select: none; }
+.js .panel a { -webkit-user-drag: none; }
+
+.art-cap {
+  margin-top: var(--s-3);
+  font-size: .875rem; color: var(--ink-3); line-height: 1.5;
+}
+.art-cap strong { color: var(--ink-2); }
+
+.chips { display: flex; flex-wrap: wrap; gap: var(--s-2); margin-top: var(--s-4); }
+.chip {
+  padding: .25rem .625rem;
+  border-radius: 999px;
+  font-size: .8125rem; font-weight: 600; letter-spacing: .006em;
+}
+.chip-fail { color: var(--fail); background: color-mix(in srgb, var(--fail) 10%, transparent); }
+.chip-warn { color: var(--draft); background: color-mix(in srgb, var(--draft) 12%, transparent); }
+.chip-dim  { color: var(--ink-3); background: rgba(0,0,0,.06); }
+
+.meter { margin-top: var(--s-6); }
+.meter-head {
+  display: flex; justify-content: space-between; align-items: baseline;
+  font-size: .8125rem; font-weight: 600; letter-spacing: .04em;
+  text-transform: uppercase; color: var(--ink-3);
+}
+.meter-val { color: var(--accent); font-size: 1.125rem; letter-spacing: -0.01em; text-transform: none; }
+.meter-rail {
+  height: .5rem; margin-top: var(--s-2);
+  background: rgba(0,0,0,.07); border-radius: 999px; overflow: hidden;
+}
+.meter-fill {
+  display: block; height: 100%; width: 100%;
+  background: var(--accent); border-radius: 999px;
+  transform: scaleX(.12); transform-origin: 0 50%;   /* scaleX, not width — compositor-friendly */
+  will-change: transform;
+}
+.meter-foot { margin-top: var(--s-2); font-size: .8125rem; color: var(--ink-3); }
+
+.spec-card { padding: var(--s-6); }
+.spec-head {
+  display: flex; align-items: baseline; gap: var(--s-3);
+  flex-wrap: wrap;
+  padding-bottom: var(--s-4); margin-bottom: var(--s-4);
+  border-bottom: 1px solid var(--hair-soft);
+}
+.spec-kind {
+  font-size: .75rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase;
+  color: var(--accent);
+}
+.spec-id { font-family: var(--mono); font-size: .875rem; color: var(--ink); }
+.spec-list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s-2); }
+.spec-list li {
+  display: flex; align-items: center; gap: .5rem;
+  font-family: var(--mono); font-size: .8125rem; color: var(--ink-2);
+}
+.spec-list em { font-family: var(--font); font-style: normal; color: var(--ink-3); font-size: .9em; }
+.tick { color: var(--pass); font-weight: 700; }
+
+.scrub-hint {
+  display: flex; align-items: center; gap: .5rem;
+  margin-top: var(--s-4);
+  font-size: .875rem; color: var(--ink-3);
+  transition: opacity 400ms ease;
+}
+.scrub-hint.gone { opacity: 0; }
+.no-js .scrub-hint { display: none; }
+.hint-grab {
+  width: 1.75rem; height: .25rem;
+  border-radius: 999px;
+  background: rgba(0,0,0,.16);
+  flex: none;
+}
+
+/* ─────────────────────────────── stats ─────────────────────────────── */
+.stats {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: var(--s-4);
+  margin: var(--s-8) 0 var(--s-12);
+}
+@media (max-width: 56rem) { .stats { grid-template-columns: 1fr; } }
+
+.stat {
+  padding: var(--s-6);
+  background: var(--canvas-alt);
+  border-radius: var(--r-lg);
+}
+.band-alt .stat { background: #fff; }
+.stat-n {
+  font-size: clamp(1.75rem, 3.4vw, 2.5rem);
+  font-weight: 700; line-height: 1.1; letter-spacing: -0.03em;
+  color: var(--ink);
+}
+.stat-arrow { color: var(--accent); font-weight: 400; }
+.stat-sub { font-size: .45em; font-weight: 600; letter-spacing: 0; color: var(--ink-3); }
+.stat-l { margin-top: var(--s-2); font-size: .9375rem; color: var(--ink-3); line-height: 1.45; }
+
+.findings { display: grid; gap: var(--s-4); }
+.finding {
+  padding: var(--s-6);
+  background: var(--canvas-alt);
+  border-radius: var(--r-lg);
+  border-left: 3px solid var(--fail);
+}
+.finding h3 { font-size: 1.125rem; letter-spacing: -0.014em; max-width: 52ch; }
+.finding p { color: var(--ink-2); max-width: 72ch; margin: 0; font-size: 1rem; }
+
+/* ─────────────────────────── ledger table ──────────────────────────── */
+/* Hairlines only, and figures that line up: this is a table people will
+   compare rows in, so the digits are tabular and the rules stay quiet. */
+.table-wrap {
+  margin: var(--s-8) 0 var(--s-3);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.ledger {
+  width: 100%;
+  min-width: 34rem;
+  border-collapse: collapse;
+  font-size: .9375rem;
+  font-variant-numeric: tabular-nums;
+}
+.ledger caption {
+  text-align: left;
+  padding-bottom: var(--s-3);
+  font-size: .8125rem;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--ink-3);
+}
+.ledger th, .ledger td {
+  padding: .6875rem .75rem;
+  text-align: left;
+  border-bottom: 1px solid var(--hair-soft);
+  vertical-align: baseline;
+}
+.ledger th:first-child, .ledger td:first-child { padding-left: 0; }
+.ledger th:last-child, .ledger td:last-child { padding-right: 0; }
+.ledger thead th {
+  font-size: .75rem; font-weight: 600;
+  letter-spacing: .06em; text-transform: uppercase;
+  color: var(--ink-3);
+  border-bottom-color: var(--hair);
+}
+.ledger tbody th { font-weight: 500; color: var(--ink); }
+.ledger td { color: var(--ink-2); }
+.ledger .num { text-align: right; }
+.ledger thead .num { text-align: right; }
+.row-sub {
+  display: block;
+  font-size: .8125rem; font-weight: 400; color: var(--ink-3);
+  letter-spacing: .004em;
+}
+.row-total th, .row-total td {
+  font-weight: 700; color: var(--ink);
+  border-top: 1px solid var(--hair);
+  border-bottom-color: var(--hair);
+  background: color-mix(in srgb, var(--accent) 5%, transparent);
+}
+.table-note { max-width: 64ch; margin-bottom: var(--s-8); }
+
+/* The second, larger run — a distinct dataset, so it gets its own frame
+   rather than being folded into the first run's numbers. */
+.second-run {
+  margin: var(--s-8) 0;
+  padding: var(--s-6);
+  background: #fff;
+  border: 1px solid var(--hair-soft);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-sm);
+}
+.second-run h3 { margin-bottom: var(--s-4); }
+.second-run p { color: var(--ink-2); font-size: 1rem; max-width: 74ch; }
+.second-run .note {
+  margin-top: var(--s-4); padding-top: var(--s-4);
+  border-top: 1px solid var(--hair-soft);
+  color: var(--ink-3); font-size: .9375rem;
+}
+.run-stats {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: var(--s-4); margin-bottom: var(--s-4);
+}
+@media (max-width: 56rem) { .run-stats { grid-template-columns: 1fr; } }
+.run-n {
+  display: block;
+  font-size: 1.5rem; font-weight: 700; letter-spacing: -0.025em;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+.run-l { display: block; margin-top: .15rem; font-size: .875rem; color: var(--ink-3); line-height: 1.45; }
+
+.ticks-tight li { font-size: .9375rem; }
+.ticks-tight { margin-top: var(--s-1); }
+.ticks-tight code { font-size: .875em; color: var(--accent); }
+
+/* On grey, a near-white card needs to be actually white to read as a card. */
+.band-alt .card { background: #fff; }
+
+/* ─────────────────────────────── split ─────────────────────────────── */
+.split {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: clamp(1.5rem, 4vw, 3.5rem);
+  align-items: start;
+  margin-top: var(--s-8);
+}
+@media (max-width: 56rem) { .split { grid-template-columns: 1fr; } }
+
+.ticks { margin: 0; padding: 0; list-style: none; display: grid; gap: var(--s-3); }
+.ticks li {
+  position: relative; padding-left: 1.5rem;
+  color: var(--ink-2); font-size: 1rem;
+}
+.ticks li::before {
+  content: ""; position: absolute; left: 0; top: .58em;
+  width: .4375rem; height: .4375rem; border-radius: 50%;
+  background: var(--accent);
+}
+.ticks strong { color: var(--ink); font-weight: 600; }
+
+/* ────────────────────────────── install ────────────────────────────── */
+.install-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: var(--s-6);
+  margin: var(--s-8) 0 var(--s-12);
+}
+@media (max-width: 56rem) { .install-grid { grid-template-columns: 1fr; } }
+
+.step-label {
+  margin-bottom: var(--s-3);
+  font-size: .8125rem; font-weight: 600; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--ink-3);
+}
+
+.sub-head {
+  margin-top: var(--s-12);
+  font-size: 1.375rem;
+  letter-spacing: -0.018em;
+}
+
+.needs {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: var(--s-4);
+  margin: var(--s-6) 0 var(--s-4);
+}
+@media (max-width: 56rem) { .needs { grid-template-columns: 1fr; } }
+.need {
+  padding: var(--s-6);
+  background: #fff;
+  border: 1px solid var(--hair-soft);
+  border-radius: var(--r-lg);
+}
+.need h4 {
+  margin: 0 0 var(--s-4);
+  font-size: 1.0625rem; font-weight: 600; letter-spacing: -0.01em;
+}
+.need-when {
+  display: inline-block; margin-left: .35rem;
+  padding: .1rem .45rem;
+  border-radius: 999px;
+  background: var(--accent-wash);
+  color: var(--accent);
+  font-size: .75rem; font-weight: 600; letter-spacing: .02em;
+}
+.need p { color: var(--ink-2); font-size: .9375rem; margin-top: var(--s-4); }
+.need .need-more {
+  margin-top: var(--s-4); padding-top: var(--s-4);
+  border-top: 1px solid var(--hair-soft);
+  color: var(--ink-3);
+}
+.need .copyline { background: var(--canvas-alt); }
+
+/* start, not stretch: these two cards hold very different amounts of text, and
+   a short one padded out to match a long one just reads as a gap. */
+.reqs { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-4); align-items: start; }
+.req .copyline { margin-top: var(--s-4); background: #fff; }
+.req .copyline-note { margin-top: var(--s-2); margin-bottom: 0; }
+@media (max-width: 56rem) { .reqs { grid-template-columns: 1fr; } }
+.req {
+  padding: var(--s-6);
+  background: var(--canvas-alt);
+  border-radius: var(--r-lg);
+}
+.req p { color: var(--ink-2); font-size: 1rem; margin: 0; }
+.req-warn { background: color-mix(in srgb, var(--draft) 7%, var(--canvas-alt)); }
+.req-warn h3 { display: flex; align-items: center; gap: .5rem; }
+.warn-mark {
+  display: inline-grid; place-items: center;
+  width: 1.25rem; height: 1.25rem; border-radius: 50%;
+  background: var(--draft); color: #fff;
+  font-size: .75rem; font-weight: 700;
+}
+.commands { margin-top: var(--s-8); color: var(--ink-3); font-size: .9375rem; }
+.commands code { color: var(--ink-2); }
+
+/* ─────────────────────────────── footer ────────────────────────────── */
+.footer {
+  padding-block: var(--s-12);
+  border-top: 1px solid var(--hair-soft);
+  background: transparent;
+}
+.footer-inner { display: grid; gap: var(--s-4); }
+.footer-brand {
+  display: flex; align-items: center; gap: .5rem;
+  font-size: .9375rem; letter-spacing: -0.012em; color: var(--ink-3);
+}
+.footer-legal { max-width: 68ch; font-size: .875rem; color: var(--ink-3); line-height: 1.6; margin: 0; }
+.footer-legal code { color: var(--ink-2); }
+.footer-links { display: flex; flex-wrap: wrap; gap: var(--s-4); margin: 0; font-size: .875rem; }
+
+/* ──────────────────────────── reveals ──────────────────────────────── */
+/* Not gesture-driven, so a mirrored ease is honest here. Nothing is hidden
+   until JS confirms it can reveal it again — no-JS must never lose content. */
+.js .reveal {
+  opacity: 0;
+  transform: translate3d(0, .875rem, 0);
+  transition: opacity 620ms cubic-bezier(.16,.84,.28,1),
+              transform 620ms cubic-bezier(.16,.84,.28,1);
+}
+.js .reveal.in { opacity: 1; transform: none; }
+
+/* ───────────────────── accessibility preferences ───────────────────── */
+/* Reduced motion is not "no feedback" — it is a gentler, non-vestibular
+   equivalent: cross-fade instead of slide, and no auto-advance (§14). */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+  .js .reveal { opacity: 1; transform: none; transition: none; }
+  .btn:active, .copybtn:active, .tab:active { transform: none; }
+
+  /* Panels cross-fade in place rather than sliding a full-width surface. */
+  .js .viewport { cursor: auto; }
+  .js .track { display: grid; grid-template-areas: "stack"; transform: none !important; }
+  .js .panel { grid-area: stack; opacity: 0; visibility: hidden; transition: opacity 200ms ease; }
+  .js .panel.active { opacity: 1; visibility: visible; }
+  .js .tab-thumb { transition: none; }
+  .scrub-hint { display: none; }
+
+  /* The background keeps its composition and loses its motion: the drift
+     stops, and the live cells are placed once by app.js and never cycle.
+     A still page, not a blank one. */
+  .bg-drift { animation: none; transform: translate3d(-3vw, 2vh, 0); }
+  .live-bar { transition: none; }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .nav, .nav.scrolled {
+    background: #fff;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border-bottom: 1px solid var(--hair);
+  }
+  /* Someone asking for less transparency is asking for fewer layers to read
+     through, so the wash goes and the bands become solid again. */
+  .bg-aurora, .bg-live { display: none; }
+  .bg-grid { opacity: .5; }
+  .band-alt { background: var(--canvas-alt); }
+}
+
+@media (prefers-contrast: more) {
+  :root {
+    --ink-2: #2f2f31;
+    --ink-3: #3f3f45;
+    --hair: rgba(0,0,0,.34);
+    --hair-soft: rgba(0,0,0,.24);
+  }
+  .nav, .nav.scrolled {
+    background: #fff; backdrop-filter: none; -webkit-backdrop-filter: none;
+    border-bottom: 1px solid var(--hair);
+  }
+  .card, .panel, .copyline, .stat, .req, .finding { border: 1px solid var(--hair); }
+  .btn-ghost { border-color: var(--accent); }
+  /* Nothing decorative may sit between the reader and the words. */
+  .bg { display: none; }
+  .band-alt { background: var(--canvas-alt); }
+}
+
+@media print {
+  .nav, .scrub-hint, .tabs, .copybtn, .bg { display: none !important; }
+  .js .reveal { opacity: 1 !important; transform: none !important; }
+  .track { display: block !important; transform: none !important; }
+  .panel { break-inside: avoid; box-shadow: none; }
+}
