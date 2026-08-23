@@ -31,6 +31,14 @@ check('the listed plugin points at this repo root', marketplace.plugins[0].sourc
 check('plugin declares a licence matching LICENSE', plugin.license, 'MIT');
 check('LICENSE is the MIT text', readFileSync('LICENSE', 'utf8').startsWith('MIT License'), true);
 
+// The marketing site states the version twice, in the hero and the footer, and it is derived
+// from the README by hand rather than built -- so it drifts every release and nothing notices.
+// It was advertising v0.4.2 on the day v0.4.3 shipped.
+const siteVersions = [...readFileSync('site/index.html', 'utf8').matchAll(/\bv(\d+\.\d+\.\d+)\b/g)]
+  .map((m) => m[1]);
+check('the site states the version at least twice', siteVersions.length >= 2, true);
+check('every version on the site is the current one', [...new Set(siteVersions)], [plugin.version]);
+
 // Frontmatter. A missing description is invisible until someone opens the plugin list.
 const frontmatter = (path) => {
   const text = readFileSync(path, 'utf8');
