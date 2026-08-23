@@ -3,7 +3,7 @@ description: Turn 5 of 5 - take every filed change to green, test-first. The loo
 argument-hint: optional change name (default is every open change)
 ---
 
-**Turn 5 of the four-plus-one loop, and the last one.** This is the only turn that writes
+**Turn 5 of the five-turn loop, and the last one.** This is the only turn that writes
 application code.
 
 **The contract is that every filed change ends green.** Each one arrived from turn 4 with a
