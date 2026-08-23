@@ -1,0 +1,29 @@
+name: test
+
+# This plugin installs a CI-gated test bank into other people's repos. It should run its own
+# tests on every change to itself, for the same reason it tells adopters to: a suite nothing
+# runs is a suite nobody trusts.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    strategy:
+      fail-fast: false
+      matrix:
+        # 20 is the floor declared in package.json engines; 22 catches what the next LTS breaks.
+        node-version: [20, 22]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+      # There are no dependencies to install -- the plugin ships no runtime deps on purpose.
+      # The tests resolve fixtures relative to the repo root, so they must run from there.
+      - name: Run tests
+        run: npm test

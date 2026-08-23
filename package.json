@@ -1,0 +1,21 @@
+{
+  "name": "tddbanking",
+  "version": "0.4.3",
+  "private": true,
+  "description": "Finds the browser behaviour your tests miss, writes tests for all of it, files what is broken as OpenSpec proposals, then develops those proposals test-first.",
+  "homepage": "https://github.com/DeepSpringAI/tddbanking",
+  "license": "MIT",
+  "author": "DeepSpring (https://github.com/DeepSpringAI)",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DeepSpringAI/tddbanking.git"
+  },
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "check:upstream": "node scripts/check-upstream.mjs",
+    "bank:stats": "node scripts/bank-stats.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

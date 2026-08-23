@@ -1,0 +1,15 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Setup trouble — a turn says a tool is missing
+    url: https://github.com/DeepSpringAI/tddbanking#what-it-needs
+    about: >-
+      Turns 4 and 5 need OpenSpec and the tdd skill. Note that installing the OpenSpec CLI gives
+      you no skills — `openspec init --tools claude` is what generates them, into that project.
+  - name: Question about the composed tools themselves
+    url: https://github.com/vitalets/playwright-bdd
+    about: >-
+      Issues with playwright-bdd, OpenSpec or the tdd skill belong in their own repos. This
+      plugin invokes them; it does not vendor or modify them.
+  - name: Report a security issue privately
+    url: https://github.com/DeepSpringAI/tddbanking/security/advisories/new
+    about: Please do not file security reports as public issues.
