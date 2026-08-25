@@ -59,6 +59,15 @@ check('a test tool CI runs directly is surfaced rather than ignored',
 check('an un-run suite is classified as a suite', script('test').suite, true);
 check('an un-run reporting script is not', script('release').suite, false);
 
+// Found by running this against the real adoption: three of its five loud lines were a report
+// viewer that executes no tests and two developer variants of a suite already listed once. A
+// command CI cannot run unattended is not a finding when CI does not run it.
+check('a report viewer is not a suite CI should run', script('test:report').suite, false);
+check('a headed run is not a suite CI should run', script('test:headed').suite, false);
+check('a watcher is not a suite CI should run', script('test:watch').suite, false);
+// The narrowing must not swallow the real thing: a plain suite is still loud.
+check('narrowing does not swallow an ordinary un-run suite', script('test').suite, true);
+
 check('block scalars are read', parseRunCommands('    - run: |\n        npm ci\n        npm run x\n').length, 2);
 check('an inline trigger list is read', parseTriggers('on: [push, pull_request]\n'), ['push', 'pull_request']);
 check('a single inline trigger is read', parseTriggers('on: push\n'), ['push']);

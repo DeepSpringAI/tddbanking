@@ -226,9 +226,18 @@ export function analyse(dir = '.') {
   // Only an un-run *suite* is the failure this report is about. An un-run `bank:stats` is a
   // reporting utility somebody invokes by hand; saying "wire it or delete it" about that is
   // the noise that gets a report ignored, and then the real one is not read either.
+  //
+  // The same applies to anything that cannot run unattended. Run against a real adoption this
+  // check flagged `playwright show-report` -- a report viewer that executes no tests -- and the
+  // headed and --ui variants of a suite already listed once. Three of its five loud lines were
+  // duplicates or non-suites, which is precisely how a report earns being skimmed. A watcher, a
+  // headed browser, an interactive runner and a report viewer are developer commands; CI not
+  // running them is correct rather than a finding.
+  const unattendable = /--ui\b|--headed\b|--watch\b|--debug\b|show-report|cypress open/;
   const isSuite = (name, command) =>
-    TEST_TOOLS.some((t) => (command ?? '').includes(t)) ||
-    /(^|[:\-])(test|tests|e2e|spec|smoke|lint|typecheck|tsc)([:\-]|$)/.test(name);
+    !unattendable.test(command ?? '') &&
+    (TEST_TOOLS.some((t) => (command ?? '').includes(t)) ||
+      /(^|[:\-])(test|tests|e2e|spec|smoke|lint|typecheck|tsc)([:\-]|$)/.test(name));
 
   return {
     hasPackageJson: existsSync(pkgPath),
@@ -294,7 +303,7 @@ function main() {
   }
   const otherOrphans = orphan.filter((s) => !s.suite);
   if (otherOrphans.length) {
-    console.log(`\nNot run by CI, and not a suite: ${otherOrphans.map((s) => s.name).join(', ')}.`);
+    console.log(`\nNot wired to CI, and not something CI should run: ${otherOrphans.map((s) => s.name).join(', ')}.`);
   }
 
   if (a.unattributed.length) {

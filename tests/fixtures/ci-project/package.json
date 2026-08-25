@@ -8,6 +8,9 @@
     "test:bank": "npm run bdd:gen && playwright test --project=bank --pass-with-no-tests",
     "test:smoke": "bddgen --tags \"@smoke\" && playwright test --project=bank",
     "lint": "eslint .",
+    "test:report": "playwright show-report",
+    "test:headed": "playwright test --headed",
+    "test:watch": "vitest --watch",
     "ci": "npm run test:smoke",
     "release": "node scripts/release.mjs"
   }
