@@ -28,6 +28,10 @@ Scope: $ARGUMENTS — if empty, every open change in `openspec/changes/`.
 - **Confirm the bank is red where you expect.** Run the full bank and note exactly which
   scenarios fail. Those failures are your acceptance criteria; a change whose scenario already
   passes needs no work.
+- **Read the open decisions**: `node ${CLAUDE_PLUGIN_ROOT}/scripts/decisions.mjs`. A change
+  whose behaviour depends on an unanswered question cannot be developed, and a developer who
+  meets that question mid-change will otherwise resolve it by picking whichever reading makes
+  the test pass.
 
 ## 2. Gate — get consent, then isolate
 
@@ -48,6 +52,16 @@ also run the suite.
 
 Give each agent: its change name, the scenarios that must go green, and an explicit instruction
 to invoke the Skill tool for both `openspec-apply-change` and `tdd`.
+
+**A change blocked on a decision blocks that change and nothing else.** Do not hold the dispatch
+while a question is answered, and do not answer it to unblock yourself. Dispatch every change
+whose behaviour is settled; leave the undecided one out of this round with its decision id
+attached, and say so in the report next to the changes that landed. Blocking a round on one item
+has happened, and it cost a week of work that had no dependency on the answer.
+
+An agent that hits an unanswered question mid-change returns `BLOCKED-ON: D-n` rather than
+choosing. Append the question to `decisions.md` if it is not there already, and move on — its
+siblings are unaffected and still merging.
 
 ## Dispatching under load, and cleaning up after failures
 
@@ -80,7 +94,10 @@ For each change that is now green:
 ## 5. Report, and stop
 
 Report per change: the scenarios that went from red to green, what was modified, and anything
-you could not fix and why.
+you could not fix and why. List separately the changes not attempted because a decision is open,
+with their ids, and print `node ${CLAUDE_PLUGIN_ROOT}/scripts/decisions.mjs`. Nine changes green
+and one waiting on a person is a completed turn, and describing it any other way is what turns an
+item's block into the round's.
 
 Then run `node ${CLAUDE_PLUGIN_ROOT}/scripts/bank-stats.mjs` and confirm no `@known-defect`
 scenarios remain unaccounted for.

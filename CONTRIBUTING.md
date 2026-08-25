@@ -17,7 +17,9 @@ A prompt that reads beautifully and produces the wrong behaviour is the normal f
 commands/     one file per turn — the user-facing entry points
 agents/       the subagents each turn spawns, mostly in parallel
 skills/       the shared skill: tag vocabulary, triage, how to write a scenario
-scripts/      bank-stats.mjs (coverage) and check-upstream.mjs (drift in borrowed skills)
+scripts/      the four reports every turn goes through, and the drift check:
+              bank-stats.mjs (coverage), decisions.mjs (the open-decisions ledger),
+              ci-wiring.mjs (which test entry points CI runs), check-upstream.mjs
 templates/    what /tddbanking:init copies into an adopting repo
 tests/        node:test over the scripts and the manifests
 DESIGN.md     why it is shaped this way, including where it disagrees with the tdd skill
@@ -28,6 +30,11 @@ DESIGN.md     why it is shaped this way, including where it disagrees with the t
 ```bash
 npm test              # node --test tests/*.test.mjs
 ```
+
+That is what CI runs, and it is the whole of what CI runs. `npm run check:upstream` and the
+Playwright checks under `site/checks/` are hand-run — which this repo's own
+`node scripts/ci-wiring.mjs` will tell you, and which is worth knowing before you trust a green
+tick here.
 
 No install step — there are no dependencies. Node 20 or newer.
 
@@ -72,6 +79,11 @@ are changing agent or command prose, say in the PR what you ran it against and w
 - **`claude plugin validate` and `claude plugin tag` are not interchangeable.** Only `tag` parses
   frontmatter, so `validate` will happily pass an agent that has lost its `description:`.
   `tests/manifests.test.mjs` covers that gap because CI has no Claude CLI.
+- **A number that appears in two places needs a test, and so does a rule.** The turn count
+  drifted across four command files for three releases because proofreading was the only guard.
+  `tests/manifests.test.mjs` now also asserts the load-bearing prose: that every turn names the
+  decisions ledger, that the parked tag is bare with its id in a companion, that the reset
+  template asserts rather than warns. Add to that file rather than trusting a careful read.
 - **`import.meta.url` resolves through symlinks; `process.argv[1]` does not.** `~/.claude` is
   often a symlink, so a naive `argv[1]` main-guard made `bank-stats.mjs` exit silently when
   installed rather than run from source. Compare realpaths.

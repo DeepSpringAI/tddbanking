@@ -11,6 +11,10 @@ const testDir = defineBddConfig({
 
 export default defineConfig({
   testDir,
+  // If steps/reset.ts is in use with a single shared database, this must be false (or set
+  // workers: 1). A global reset and parallel workers are incompatible: one worker wipes the
+  // database while another is mid-scenario, and the failure surfaces somewhere else entirely.
+  // /tddbanking:init settles this at scaffold time; see the header of steps/reset.ts.
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,

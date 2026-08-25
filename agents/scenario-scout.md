@@ -15,7 +15,9 @@ You are told which one. Do only that one — the value of running scouts in para
 each being blind to the others.
 
 Documentation is not your job. `promise-extractor` and `promise-auditor` handle it, and they
-handle it better than a general sweep would.
+handle it better than a general sweep would. Neither are the words the app renders: `copy-reviewer`
+checks whether a label, an empty state or an error message is telling the truth. Note what a
+control *does*, not whether it is named accurately — a general sweep finds neither well.
 
 **app-crawl** — drive the running app. **Invoke the Skill tool with `webapp-testing`** for how
 to do it; if it is absent, say so in your report and drive Playwright directly.

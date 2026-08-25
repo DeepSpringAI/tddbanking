@@ -397,3 +397,156 @@ discovery, banking, triage, and developing what it finds. The second consequence
 should grow on a schedule — coverage decays by default, because every feature that ships without
 a scenario lowers it, so a bank expanded only when someone remembers falls behind the app by
 construction.
+
+---
+
+# v0.5.0 — five things the design implied and did not implement
+
+An assessment of a five-turn run against a client project found five capabilities this document
+already assumes exist. Each of them had a concrete failure attached, which is why they are worth
+recording together: they are not five features, they are one recurring shape. **The design named
+a responsibility and then provided no mechanism, so each turn improvised one, and an improvised
+mechanism is invisible to the next turn.**
+
+## Why open decisions needed a file rather than better instructions
+
+`promise-auditor` has said since v0.2.0 that a documentation-versus-code disagreement "is a
+product decision and not yours — report the disagreement and let a human choose". That
+instruction is right and it was unactionable: there was nowhere to report it *to*. The escalation
+landed in a paragraph of an agent's report, which its caller summarised, which the user read
+once. Two turns later the same disagreement was rediscovered and escalated again, because nothing
+persisted.
+
+`decisions.md` is that destination, and the reason it has a parser is the reason coverage has
+one. A format each turn writes in its own shape is not a channel; it is six turns keeping
+separate notes that happen to share a filename. `scripts/decisions.mjs` defines the format by
+reading it, and reports three things that are work rather than commentary: a decision raised
+twice while still open (nobody is reading the channel), an answered decision with scenarios still
+parked on it (a standstill with the excuse removed), and a `@decision:` tag with no matching entry
+(a scenario parked on a question that exists nowhere, which is parked forever).
+
+It cross-checks against the bank for the same reason the corroboration counter keys pairs by full
+source tag: the convenient version hides the failure you built the metric for. A ledger nobody
+can connect to a scenario is a ledger that will quietly diverge from the work.
+
+## Why blocking is scoped to the item, and why that had to be said out loud
+
+On the run, one undecided pricing rule stopped a full round. Nothing in the design asked for
+that; nothing in the design forbade it either, and in the absence of a rule "there is an open
+question" reads as a property of the round rather than of three scenarios.
+
+The bank already had the right shape and it was only being used for one case. `@blocked` parks a
+single scenario for a missing fixture, is reported per scenario, and lets the round proceed —
+precisely so that a work list never loses an item silently. `@needs-decision` + `@decision:D-n`
+is the same mechanism for a different cause, and the causes are kept apart deliberately: blocked
+needs a fixture built, undecided needs a person to choose, and conflating them loses the only
+part anyone can act on.
+
+The rule now appears at every scale — a scenario does not stop a capability, a change does not
+stop its siblings, a finding does not stop turn 4 — because the failure was not about scenarios.
+It was about a turn interpreting one item's obstacle as its own.
+
+`implementable` excludes undecided scenarios, and that exclusion has a sharper justification than
+the blocked one. A scenario whose *assertion* is the undecided part cannot be implemented without
+inventing an expected value, which is the tautological test the `tdd` skill names: it will agree
+with the code forever and can never disagree with it. Guessing is worse than parking.
+
+## Why copy review is a discovery modality rather than a review checklist
+
+A screen labelled a hand-entered value "Extracted". Nothing in the loop was looking at copy: the
+crawl asks what a user can do, the auditor asks whether a documented rule is implemented, and
+neither reads the label beside the answer.
+
+Two things about that failure decided the shape of the fix.
+
+**The labelling was inverted, not missing.** A present, wrong label survives every reader,
+because there is nothing absent to notice, and it is a claim the user has no reason to doubt at
+the exact moment they are deciding whether to trust the number under it. So the agent's procedure
+is to trace what a claim is *about* to its source and compare — not to check that labels exist,
+which is what already happened and found nothing.
+
+**A copy defect is testable**, which is why this is a modality and not a review pass. The output
+is banked, evidenced Gherkin like everything else, so the finding becomes a scenario that guards
+the claim forever rather than a note in a report. `writing-scenarios.md` carries the rule that
+makes that worth doing: assert the claim, not its presence. `toBeVisible()` on a lying label is
+green in both worlds.
+
+The scope is narrow on purpose — five kinds of checkable claim, and an explicit refusal of tone,
+grammar and house voice. A copy reviewer that returns wording preferences is a reviewer whose
+output stops being read, and then the true findings go unread with them.
+
+## Why `status` reports CI wiring
+
+The bank gated every pull request on that project while its entire unit suite was invoked by no
+workflow. Months later somebody ran it, found four failures, and read them as accumulated
+history. They were three days old, and they had been caused from inside this loop.
+
+That is the part worth generalising. **A suite nothing runs does not merely go unread — it
+silently reassigns blame.** Failures accumulate unobserved; whoever eventually runs it inherits
+all of them at once; and a pile discovered together reads as rot rather than as regression. The
+person who finds it has no way to tell which failures are theirs, so the cost lands on the one
+person who was doing the right thing.
+
+A plugin that installs a *gate* is exactly the tool that should ask this question, because
+installing one is precisely when a repository's green tick starts meaning less than it appears
+to. `scripts/ci-wiring.mjs` follows `npm run` chains through `package.json`, reads `on:` blocks
+and `run:` steps, and names what nothing invokes — including Playwright projects, which are entry
+points too and are easier to orphan than scripts.
+
+It is a narrow scan rather than a YAML parse because this plugin ships no dependencies, and it
+states its one limitation instead of hiding it: granularity is the workflow, not the step. "Run
+by nothing at all" is exact; "runs on pull_request" is the workflow's claim.
+
+## Why the scaffolded reset asserts, and why asserting the status was not enough
+
+A `Before` hook fired `POST /api/test/reset` and never read the response. A new table with
+foreign keys was added; the reset's hard-coded delete list was not updated; the endpoint returned
+500; five scenarios passed against a half-deleted database. Nothing failed. A human reading the
+seed file found it.
+
+The plugin was silent on reset — `fixtures.ts` is documented as holding `createBdd(test)` and
+nothing else, and nothing said how scenarios get clean state — so every adopter wrote their own,
+and the natural one is fire-and-forget. Silence on the most load-bearing part of a bank's
+isolation is a design decision by default.
+
+`templates/steps/reset.ts` is built out of three things that failure taught.
+
+**The failure mode is silent success, so anything that leaves the suite green is a non-fix.**
+Every check fails the run. None warns.
+
+**The diagnostic matters as much as the assertion.** "reset failed: 500" sends someone hunting;
+the same 500 with "if a table was added recently it probably needs adding to the delete list in
+<seed module> and to <reset handler>" is a two-minute fix. So the template carries that sentence
+with the project's own paths in it, and `/tddbanking:init` is told that leaving the placeholders
+is an unfinished step rather than a cosmetic one.
+
+**Two lists maintained by memory is the actual defect.** A delete list that every migration must
+remember to update will eventually not be updated — that is what a list maintained by memory
+does. So the endpoint is required to *enumerate* the live schema and report the tables it found
+alongside the ones it cleared, and the hook fails when they disagree. That check runs before
+every scenario, which means it runs on the pull request that adds the migration rather than on
+whoever trips over it three weeks later — provided the bank is wired into CI, which is what the
+previous section is for. The two findings turn out to be the same finding.
+
+The default is fail-closed: a reset that cannot prove it was complete refuses rather than
+proceeding, because a partially-reset database must never present as ready. The downgrades exist
+(`BANK_RESET_EXPECT=body`, `=status`) and are environment variables rather than edits, so
+choosing one appears in a diff someone reviewed and `grep` finds every project that chose it.
+
+## What was deliberately not built
+
+**A fourth triage verdict.** "Undecided" is a real outcome and it is not a verdict. Three verdicts
+with a documented bias is a decision procedure someone can follow; four is a menu, and the fourth
+would have absorbed most of the `defect` cases, which is the direction the bias exists to prevent.
+It is a `DECISION` line alongside the verdict instead.
+
+**A migration-time hook checking the schema against the reset.** It would catch the defect
+earlier, and it is somebody else's repository. This plugin does not own the adopting project's
+migration tooling, and a hook that runs on other people's machines is the thing v1 deliberately
+declined to ship. The runtime check gets most of the value at the pull request, which is early
+enough to name the change that caused it.
+
+**Anything that lets a turn answer its own open decision.** Every mechanism here is built so the
+loop keeps moving *without* an answer. Nothing prompts the user mid-turn, because a loop that
+blocks on a human is a loop that runs at human latency, and because the decision that gets made
+to unblock an agent is the decision nobody thought about.

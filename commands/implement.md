@@ -38,8 +38,19 @@ node ${CLAUDE_PLUGIN_ROOT}/scripts/bank-stats.mjs --json
 ```
 
 The work list is every scenario that is `@draft`, **not** `@blocked`, and **not**
-`@gap-suspected` — the `implementable` count. Print that number. It is what you are
-accountable for at the end of the turn.
+`@needs-decision` — the `implementable` count. Print that number. It is what you are
+accountable for at the end of the turn. (A reachable `@gap-suspected` scenario is in the list:
+a failing test proves the gap better than a document comparison does.)
+
+Then read the questions the parked ones are waiting on:
+`node ${CLAUDE_PLUGIN_ROOT}/scripts/decisions.mjs`. If any decision has been answered since it
+was raised, remove `@needs-decision` and `@decision:` from its scenarios and implement them in
+this turn — the report lists those explicitly, because an answered decision nobody acted on
+produces exactly the same standstill as an unanswered one.
+
+**An open decision never makes this turn smaller than the implementable count.** It parks the
+scenarios that depend on it and nothing else. Say how many are parked and on which decisions;
+then implement everything else, in full.
 
 If it is zero, say so and hand to turn 3.
 
@@ -118,6 +129,12 @@ Each scenario ends in exactly one state, and the routing matters more than the c
   `@draft`, add `@blocked` and a `# blocked:` comment naming exactly what is missing, and
   count it. Do not manufacture the state by driving the interface through a long setup path:
   that tests the setup more than the behaviour, and it is slow and brittle forever after.
+- **needs a decision** — writing the test turned out to require choosing what the right answer
+  is. Restore `@draft`, add `@needs-decision` and `@decision:D-n`, and append the question to
+  `decisions.md` with both options. Do **not** guess the assertion: an expected value invented
+  by the implementer is the tautological test this bank forbids everywhere else, and it will
+  agree with the code forever. Park that scenario and carry on with the others — one open
+  question is not a reason to stop a capability, let alone a round.
 
 **Never edit a scenario's assertion to match what the application does.** That converts a
 discovered defect into permanent blindness, and it is the single thing this whole system
@@ -126,7 +143,11 @@ exists to prevent.
 ## 5. Report and stop
 
 Print `node ${CLAUDE_PLUGIN_ROOT}/scripts/bank-stats.mjs` and state plainly: implementable at
-the start, live at the end, and newly blocked. If those do not reconcile, say which scenarios
-are unaccounted for.
+the start, live at the end, newly blocked, and newly parked on a decision. If those do not
+reconcile, say which scenarios are unaccounted for.
+
+Every parked scenario is reported with its question, never dropped from the count in silence. A
+scenario that leaves a work list without a visible reason is the failure `@blocked` was
+introduced to fix, and an undecided one reproduces it exactly.
 
 End by telling the user the next step is `/tddbanking:verify`.

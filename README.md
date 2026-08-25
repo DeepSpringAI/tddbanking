@@ -92,10 +92,11 @@ Run it again after your next feature and it picks up from the bank it already bu
 
 ---
 
-## Three ways it finds what you're missing
+## Four ways it finds what you're missing
 
 Run in parallel, each blind to the others — which is why the union is bigger than any of them.
-In the first real run, **88% of scenarios came from exactly one mode**.
+In the first real run, across the three modes that existed then, **88% of scenarios came from
+exactly one mode**.
 
 **App crawl** — drives your running app: every route, form, control, error state and permission
 boundary. Finds what nobody wrote down. This is the one that catches the app misbehaving in
@@ -108,6 +109,13 @@ were documented, agreed, and never actually built.
 **Defect-driven** — mines your git history and issue tracker for bugs you already fixed and
 turns each into a regression test. Expect the most scenarios and the fewest new findings — this
 is insurance, not detection.
+
+**Copy review** — reads the words your app shows and checks each claim against what it describes.
+Provenance ("Extracted", "Verified"), state ("Sent", "Approved"), quantity, permission, outcome.
+Nothing else in the loop reads copy: a crawl asks what a user can *do*, an auditor asks whether a
+documented rule is *implemented*, and neither reads the label next to the answer. The failure it
+catches is **inverted, not missing** — on a real run a screen labelled a hand-entered figure
+"Extracted", and every reviewer skimmed past it precisely because nothing was absent.
 
 ---
 
@@ -148,8 +156,9 @@ is front-loaded.
 
 ### Sitting idle: negligible
 
-**~861 tokens** added to every session, whether you use it or not. That is the plugin's whole
-descriptive surface — 6 commands and 7 agents. Installing it does not tax your normal work.
+**~970 tokens** added to every session, whether you use it or not. That is the plugin's whole
+descriptive surface — 7 commands and 9 agents. (861 measured at v0.4.4, scaled by the
+descriptions added since.) Installing it does not tax your normal work.
 
 ### One full cycle on a 58-scenario bank: ~2M tokens
 
@@ -304,7 +313,7 @@ Two things to get right before automating it:
 Then, in the repo of the app you want covered:
 
 ```bash
-/tddbanking:init        # one-time: playwright-bdd, config, scripts, CI workflow
+/tddbanking:init        # one-time: playwright-bdd, config, scripts, CI workflow, asserting reset
 /tddbanking:discover    # turn 1 — it tells you what to run next
 ```
 
@@ -397,9 +406,30 @@ Proven bugs are tagged `@known-defect` with the change that will fix them: they 
 PR gate so they don't block unrelated work, while the full run keeps them visible. The day one
 passes, the fix landed.
 
+### When nobody has decided
+
+The loop finds product questions it must not answer — a rule your docs state one way and your
+code implements another. Those go to **`decisions.md`**, one file, written by every turn and read
+by every turn before it asks you anything. `/tddbanking:status` prints it, and flags the three
+states that are work rather than reporting: a question raised twice while still open, an answered
+question with scenarios still parked on it, and a scenario waiting on a question that exists
+nowhere.
+
+**An open decision parks the items that depend on it, never the round.** Those scenarios get
+`@needs-decision` and stop gating; everything else is banked, implemented, verified and filed as
+usual. This is not a nicety — one undecided pricing rule once stopped a full round of work that
+had no dependency on the answer.
+
 ---
 
-## Two things worth knowing
+## Three things worth knowing
+
+**A green bank is a floor, not a ceiling.** Installing a gated browser suite tells you nothing
+about the suite beside it. On the first adoption the bank gated every pull request while the
+project's whole unit suite was invoked by no workflow at all — and when someone finally ran it,
+its failures read as accumulated history. They were three days old. A suite nothing runs does not
+merely go unread: it silently reassigns blame to whoever finds it next. `/tddbanking:status` names
+every npm script and Playwright project CI actually runs, and every one it does not.
 
 **A green test on the first run is a success, not a failure of TDD.** Your app already exists,
 so most scenarios document behaviour that already works — that is coverage gained. A red one is
@@ -421,7 +451,7 @@ permission to stop. Each turn's contract is now completeness.
 - [SECURITY.md](SECURITY.md) — how to report privately, and the two turns that write to your app
   on purpose.
 - Commands: `init`, then the five turns — `discover`, `implement`, `verify`, `file`, `develop` —
-  plus read-only `status`.
+  plus read-only `status`, which reports coverage, open decisions, and what CI actually runs.
 - Nothing is vendored. All three upstream projects are referenced by name so they stay current.
 
 ## Licence

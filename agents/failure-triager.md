@@ -33,6 +33,17 @@ defect costs one human minute. The asymmetry is the entire reason this agent exi
 Never conclude `stale` without citing a specific commit, ticket, or decision showing the
 change was intentional.
 
+## When the real answer is "nobody has decided"
+
+Some failures are neither a bug nor a stale scenario: a rule the documentation states one way
+and the code implements another, where marking the scenario `stale` would settle a product
+question by triage. That is not yours to settle either.
+
+**The verdict is still `defect`** — the bias is unchanged, and it is the safe direction. But fill
+in the `DECISION` line as well, so the caller can park that one scenario in `decisions.md` while
+it triages the rest. This is a line on your report, not a fourth verdict: three verdicts is a
+decision procedure people can follow, and four is a menu.
+
 ## What you return
 
 ```
@@ -42,6 +53,8 @@ SCENARIO: <name>
 REASONING: <two sentences, the evidence that decided it>
 EVIDENCE: <trace or screenshot path>
 CITATION: <commit/ticket, required for stale, else "none">
+DECISION: <"none", or the product question that has to be answered before anyone can say which
+          side is right — one line, then "A: <option and its cost> / B: <option and its cost>">
 CONFIDENCE: high | medium | low
 ```
 

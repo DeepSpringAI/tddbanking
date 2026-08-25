@@ -52,6 +52,13 @@ touch only your own files.
 - **blocked** — the preconditions cannot be produced. Restore `@draft`, add `@blocked` and a
   `# blocked:` comment naming exactly the missing fixture, and move on. Do not build a long
   setup path through the interface to manufacture the state.
+- **needs a decision** — you cannot write the assertion because nobody has decided what the
+  right answer is. Restore `@draft`, add `@needs-decision` and `@decision:D-n` if your caller
+  gave you an id (otherwise `@needs-decision` alone and say so), and report the question with
+  both options. **Do not guess the expected value.** A value you chose is a value the code will
+  agree with forever — the tautological test the `tdd` skill names, arrived at by a different
+  route. Park that scenario and take the next one: one open question is not a reason to stop a
+  capability.
 
 **Never edit a scenario's assertion to match what the application does.** If a scenario is
 genuinely wrong, say so explicitly and cite the intentional change that made it wrong.
@@ -64,6 +71,7 @@ CAPABILITY: <name>
 GREEN:   <n>  <one line per scenario>
 RED:     <n>  <one line per scenario, no verdict — turn 3 decides>
 BLOCKED: <n>  <one line per scenario, with the missing fixture>
+UNDECIDED: <n>  <one line per scenario: the question, then "A: ... / B: ...">
 FILES: <the paths you created or changed>
 ```
 

@@ -45,6 +45,12 @@ Two of these are commonly missing and for different reasons:
 
 - Read the existing bank so discovery dedups against it rather than re-finding it:
   `node ${CLAUDE_PLUGIN_ROOT}/scripts/bank-stats.mjs --json`
+- **Read the open decisions before you ask the user anything:**
+  `node ${CLAUDE_PLUGIN_ROOT}/scripts/decisions.mjs`. This turn generates most of the loop's
+  product questions, and asking one that is already recorded — or worse, already answered — is
+  how the ledger stops being read. If a decision has been answered since the last run, the
+  scenarios parked on it are now implementable and should be untagged here rather than left for
+  somebody to notice.
 - **Read the repository's existing test suites too**, not just the bank. Find them (`tests/`,
   `e2e/`, `*.spec.*`, `*.test.*`, whatever this project uses) and skim what behaviour they
   already assert. A project with a real suite has already covered some of what discovery is
@@ -77,6 +83,14 @@ Cost is not a constraint here; breadth is. Dispatch every applicable agent at on
   this accounted for 70% of all apparent corroboration and about 10% of the turn's budget.
   Splitting by source is what makes close reading affordable; splitting by file manufactures
   false confidence.
+
+- **One `copy-reviewer` per user-facing surface.** Nothing else in this loop reads the words the
+  application shows. A crawl asks what a user can do; an auditor asks whether a documented rule
+  is implemented; neither reads the label sitting beside the answer. On the run that produced
+  this agent, a screen labelled a hand-entered figure "Extracted" — the labelling was not
+  missing, it was **inverted**, which is why it survived every reader who was checking that
+  labels existed. Split by surface the same way extractors split by source, and hold it to the
+  same evidence rule: the string, and the thing it disagrees with.
 
 Then, as extractions land, dispatch **`promise-auditor`** over the extracted promises — one
 per batch of related promises, in parallel. This is the stage that finds documented behaviour
@@ -114,6 +128,16 @@ order in which the two happen.
   `@blocked` and a `# blocked:` comment naming the missing fixture.
 - Promises that are contradicted or absent get `@gap-suspected`. These are turn 4 material,
   not turn 2 material — nobody can test a feature that does not exist.
+- **A candidate whose expected outcome nobody has decided gets `@needs-decision` and
+  `@decision:D-n`, and the question gets written to `decisions.md`.** This is the common output
+  of `promise-auditor`: a document and the code disagree, and choosing between them is a product
+  decision, not a discovery. Bank the scenario, park it, and write the question down with both
+  options and what each costs.
+
+  **Park the scenario, not the turn.** Everything else carries on being banked and, next turn,
+  implemented. One undecided rule stopping a whole round has already happened once, and it cost
+  a week of unrelated work. Never ask the user to resolve a decision mid-turn: the whole point
+  of the ledger is that the loop keeps moving while a human answers on their own schedule.
 
 ## 5. Report and stop
 
@@ -129,6 +153,10 @@ Two parts of that output deserve reading rather than skimming:
   process structurally cannot reach, and they are worth reading first. Do not judge a modality by
   volume alone: in a measured run, app-crawl returned the fewest scenarios of any modality and
   produced the entire authorization cluster, with 17 of its 18 findings predicted by nothing.
+
+Then print `node ${CLAUDE_PLUGIN_ROOT}/scripts/decisions.mjs`. Say how many scenarios each open
+decision is parking and, in the same breath, how many are unaffected and going to turn 2 — those
+two numbers together are what stops an open question reading as a stopped loop.
 
 **One exception to discovery-only.** If a scout reproduces a **live crash or data-destroying
 defect**, stop and report it immediately rather than banking it and moving on. Everything else

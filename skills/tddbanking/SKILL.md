@@ -50,9 +50,10 @@ On a `Scenario`:
 | `@regression` | Guards a bug that already happened once. |
 | `@quarantine` + `@quarantine-until:<YYYY-MM-DD>` | Known flaky. The bare tag is what the gate filters on; the companion carries the deadline. Must be fixed or deleted by that date. |
 | `@priority:high\|medium\|low` | Drives what `/tddbanking:implement` picks next. |
-| `@from-crawl` `@from-bug:<id>` `@from-story:<id>` | Which discovery modality found it. |
+| `@from-crawl` `@from-bug:<id>` `@from-story:<id>` `@from-copy` | Which discovery modality found it. |
 | `@known-defect` + `@defect-change:<name>` | The bank proved a real bug and it is being fixed under that change. Excluded from the `@smoke` gate so it does not block unrelated work, but kept in the full run — the day it goes green is the day the fix landed. Never use it to silence a failure nobody is fixing. |
 | `@blocked` + a `# blocked:` comment | The scenario's preconditions cannot be produced from any fixture. Excluded from turn 2's work list; turn 4 files the missing fixture as work. The comment names the fixture as a task, not "needs more data". |
+| `@needs-decision` + `@decision:<D-n>` | Nobody has decided what this scenario should assert. Excluded from turn 2's work list and from the gate; the companion carries the id of the entry in `decisions.md`. It parks **this scenario**, never the round. |
 | `@gap-suspected` | The behavior was promised somewhere but appears unbuilt. Route it to `/tddbanking:file`. **But if it is also reachable, implement it anyway** — a failing test proves the gap far better than a document comparison, and turns a suspicion into a finding. Only an unreachable one is excluded from turn 2. |
 | `@from-backend:<path>` | Reserved: a backend test asserting the same behavior. |
 
@@ -72,6 +73,50 @@ Every `@draft` also carries an evidence comment directly above it:
 
 **No evidence, no scenario.** A scenario invented without a route, a control, a ticket, or a
 report is a guess, and a bank with guesses in it stops being trusted. Drop it instead.
+
+## Open decisions live in one file
+
+Several agents are told to escalate rather than decide, and they are right to be.
+`promise-auditor` must not settle a document-versus-code disagreement by declaring the document
+stale. `failure-triager` reaches failures where "stale scenario" would really mean "somebody has
+to choose". `change-developer` finds a delta spec contradicting a scenario that passes. Each of
+those is a product decision.
+
+**They all go to `decisions.md` in the repo root, and every turn reads it before asking anyone
+anything.**
+
+```
+node ${CLAUDE_PLUGIN_ROOT}/scripts/decisions.mjs
+```
+
+The format is fixed by that script rather than by convention, because a convention is what six
+turns each keeping their own notes looks like from the inside. One `## D-<n>: <question>` per
+decision; `status`, `raised`, `evidence`, `blocks`, at least two `options`, and `answer` with
+`answered-by` once it is settled. `/tddbanking:init` writes the file; the template explains the
+shape.
+
+Three things the report will tell you, all of which are work rather than commentary:
+
+- **A decision raised twice while still open** — the channel is not being read, and the next
+  turn is about to ask a third time.
+- **An answered decision with scenarios still parked on it** — the standstill continues with
+  the excuse removed. Untag them and implement them.
+- **A `@decision:` tag with no matching entry** — a scenario parked on a question written down
+  nowhere, which is parked forever.
+
+### Blocking is per item, never per round
+
+An open decision stops the items that depend on it and nothing else. Tag those items
+`@needs-decision` and `@decision:D-n`; leave everything else in the round alone.
+
+This is not a nicety. On a real run, one undecided pricing rule stopped a full round of work
+because the turn treated "there is an open question" as a reason to halt rather than as a
+property of three scenarios. Everything unrelated waited a week for an answer it did not need.
+
+The same rule applies at every scale: a change blocked on a decision does not stop its sibling
+changes, and a finding blocked on a decision is still filed. What must never happen is the
+quiet version — an item dropped from a work list with no visible reason, which is the failure
+`@blocked` was introduced to fix and which an undecided scenario reproduces exactly.
 
 ## Two modes, and why a green-on-first-run is a success
 
@@ -170,8 +215,8 @@ stop early, and a bank abandoned part-way is worth roughly nothing. Ranking stil
 inside a turn, as scheduling.
 
 **Turns fan out.** Cost is not the constraint; completeness is. Discovery runs a scout per
-modality plus an extractor per document class plus a reachability probe per candidate, all in
-parallel. Implementation runs one agent per capability, each in **its own worktree**, because
+modality plus an extractor per document source plus a copy reviewer per user-facing surface plus
+a reachability probe per candidate, all in parallel. Implementation runs one agent per capability, each in **its own worktree**, because
 they all write code. Verification shards by capability with **a distinct port per shard**.
 
 Turns 4 and 5 need the OpenSpec CLI; turns 1-3 run on a repository that has never heard of it.
@@ -204,6 +249,42 @@ Every command reports through that script. Do not improvise a regex over the fea
 a comment line between a scenario's tag block and its `Scenario:` keyword is legal Gherkin and
 is easy to miss, and an under-reported coverage number is worse than no number. The script is
 tested against exactly that case.
+
+## Clean state is asserted, not assumed
+
+`steps/reset.ts`, written by `/tddbanking:init`, calls the project's fixture-reset endpoint
+before every scenario and **asserts on the response**. That is the whole difference between a
+reset and a hope.
+
+The natural hook is a fire-and-forget POST, and on the first real adoption that hook swallowed a
+500 — a new table had been added to the schema, the reset's hard-coded delete list had not been
+updated — and five scenarios passed against a half-deleted database. Nothing failed. A human
+reading the seed file found it.
+
+So the hook fails the run rather than warning, names the reset implementation and the delete list
+in its message so a 500 is a two-minute fix rather than an afternoon, and requires the endpoint
+to report the tables it found as well as the ones it cleared. A hard-coded delete list is a
+second list that every migration must remember to update, and a list maintained by memory is the
+defect rather than the symptom.
+
+## What CI runs is read, never assumed
+
+```
+node ${CLAUDE_PLUGIN_ROOT}/scripts/ci-wiring.mjs
+```
+
+**The bank is a floor, not a ceiling.** Installing a gated browser suite into a repository says
+nothing about what else runs there, and on the first adoption the answer was: the bank gated
+every pull request while the project's whole unit suite was invoked by no workflow at all.
+
+The cost of that is not that a suite goes unread. It is that a suite nothing runs **silently
+reassigns blame**. Its failures accumulate; whoever eventually runs it inherits all of them at
+once; and a pile of failures discovered together reads as months of rot. On that project it
+read exactly that way, and four of the failures had been caused three days earlier by a change
+made inside this loop.
+
+`/tddbanking:status` reports which scripts and which Playwright projects CI actually invokes,
+and which nothing invokes. Report it as a finding, not as trivia.
 
 ## Page Objects are constructed in steps, not registered
 

@@ -41,6 +41,17 @@ you do not improve it, and you do not start by writing a different test.
 The delta spec is the source of truth for behaviour. Where it and the scenario disagree, stop
 and say so rather than picking one.
 
+## When the change turns on a question nobody has answered
+
+If making the scenario pass requires choosing between two defensible readings — a rule the spec
+states one way and a passing scenario asserts another, a figure two documents disagree about —
+that is a product decision. Return `BLOCKED-ON: D-n` with the question and both options, and
+stop working on **this** change.
+
+Do not resolve it by picking whichever reading makes your test pass; that is the same move as
+editing the assertion, arrived at more slowly. Do not wait for an answer either — you are one of
+several agents and your siblings' changes do not depend on this question. Report and finish.
+
 ## Scope
 
 Only what the change describes. A filed change is narrow on purpose; if the fix seems to require
@@ -58,6 +69,7 @@ SCENARIOS STILL RED: <any, with why>
 MODIFIED: <application files you changed>
 TASKS: <n of m checked off>
 FULL BANK: <pass/fail counts after your change>
+BLOCKED-ON: <"none", or D-n plus the question and its two options>
 ```
 
 Report `SKILLS` honestly. An agent that quietly skipped a skill produces output identical to
