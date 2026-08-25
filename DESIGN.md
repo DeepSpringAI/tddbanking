@@ -497,6 +497,20 @@ It is a narrow scan rather than a YAML parse because this plugin ships no depend
 states its one limitation instead of hiding it: granularity is the workflow, not the step. "Run
 by nothing at all" is exact; "runs on pull_request" is the workflow's claim.
 
+Run against that same codebase on its current `main`, it found three things on a project already
+audited twice: `test:e2e` invoked by no workflow, which reproduced an open finding from the wiring
+alone rather than by reading the specs; two configured Playwright projects no CI command selects;
+and `tsc --noEmit` running nowhere, which nobody had recorded — a TypeScript project with no type
+check on any pull request.
+
+The same output made the check better, which is the part worth recording. Three of its five loud
+lines were noise: a report viewer that executes no tests, and the headed and interactive variants
+of a suite it had already named once. **A command CI cannot run unattended is not a finding when
+CI does not run it**, so watchers, headed runs, interactive runners and report viewers are no
+longer counted as suites. This is the same discipline the copy reviewer's scope has, arrived at
+from the other direction: a report that shouts about developer conveniences is a report that gets
+skimmed, and the two real findings underneath are what go unread when it does.
+
 ## Why the scaffolded reset asserts, and why asserting the status was not enough
 
 A `Before` hook fired `POST /api/test/reset` and never read the response. A new table with
