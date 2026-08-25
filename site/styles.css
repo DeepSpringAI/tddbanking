@@ -504,7 +504,13 @@ p:last-child { margin-bottom: 0; }
   grid-template-columns: repeat(2, 1fr);
   margin-top: var(--s-8);
 }
-@media (max-width: 56rem) { .grid-3, .grid-2 { grid-template-columns: 1fr; } }
+/* Four discovery modes read better as 2x2 than as a row of three with an orphan. */
+.grid-4 {
+  display: grid; gap: var(--s-4);
+  grid-template-columns: repeat(2, 1fr);
+  margin-top: var(--s-8);
+}
+@media (max-width: 56rem) { .grid-3, .grid-2, .grid-4 { grid-template-columns: 1fr; } }
 
 .mode, .dep { padding: var(--s-6); }
 .mode p, .dep p { color: var(--ink-2); font-size: 1rem; }
@@ -670,7 +676,7 @@ p:last-child { margin-bottom: 0; }
 /* A grid/flex item defaults to min-width:auto, so a <pre> with long lines
    refuses to shrink and pushes its column wider than the panel. The code
    should scroll inside its card; the card should fit its column. */
-.panel > *, .split > *, .grid-3 > *, .grid-2 > * { min-width: 0; }
+.panel > *, .split > *, .grid-3 > *, .grid-2 > *, .grid-4 > * { min-width: 0; }
 
 .panel-text h3 {
   font-size: clamp(1.25rem, 2.2vw, 1.625rem);

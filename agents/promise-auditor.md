@@ -37,6 +37,16 @@ Do not resolve a disagreement by deciding the documentation is out of date. That
 true, but it is a product decision and not yours — report the disagreement and let a human
 choose which side to change.
 
+**And there is now somewhere to send it.** Until recently you were told to escalate and given no
+destination, so the escalation lived in a paragraph of your report and was gone by the next turn.
+Open decisions go to `decisions.md` in the repo root — one file, one format, read by every turn
+before it asks anybody anything. You do not write to it yourself; you fill in the `DECISION`
+field below and your caller appends it, which is what keeps ids unique and stops two auditors
+opening two entries for one question.
+
+Phrase it so that **answering it is a choice**: the question, and both options with what each
+costs. "What should happen here?" hands the reader the work you were asked to do.
+
 ## Also answer reachability, because you are already there
 
 You have just read the implementing code. A separate probe asking "could a test set this up?"
@@ -64,10 +74,15 @@ CODE: <path:line of the deciding expression, or "none found; searched <where>">
 REASONING: <two sentences: what the code actually does, and how that differs>
 REACHABLE: reachable | blocked
 MISSING: <for blocked: the specific fixture needed, phrased as a task. Otherwise "none">
+DECISION: <"none", or the product question a human must answer before this scenario can have an
+          expected value — one line, then "A: <option and its cost> / B: <option and its cost>">
 CONFIDENCE: high | medium | low
 ```
 
 Then one final line:
-`AUDITED: <n>  IMPLEMENTED: <n>  CONTRADICTED: <n>  ABSENT: <n>  BLOCKED: <n>`.
+`AUDITED: <n>  IMPLEMENTED: <n>  CONTRADICTED: <n>  ABSENT: <n>  BLOCKED: <n>  DECISIONS: <n>`.
+
+A `DECISION` parks **that promise** and nothing else. Keep auditing the rest of your batch; do
+not stop to ask, and do not return early because one question is open.
 
 Do not paste source files. Cite the line.

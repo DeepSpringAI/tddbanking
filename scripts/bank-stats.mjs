@@ -85,26 +85,42 @@ const pref = (s, p) => s.tags.find((t) => t.startsWith(p)) ?? null;
 export function summarise(scenarios) {
   const isDraft = (s) => has(s, '@draft');
   const isBlocked = (s) => has(s, '@blocked') || s.blockedNote !== null;
+  // Waiting on a product decision is a different state from blocked, and conflating them loses
+  // the only thing anyone can act on: blocked needs a fixture built, this needs a person to
+  // choose. Both are per-scenario, so neither ever stops a round.
+  const isWaiting = (s) => has(s, '@needs-decision');
   const byCapability = {};
   for (const s of scenarios) {
-    const c = (byCapability[s.capability] ??= { total: 0, live: 0, draft: 0, blocked: 0, smoke: 0 });
+    const c = (byCapability[s.capability] ??= { total: 0, live: 0, draft: 0, blocked: 0, waiting: 0, smoke: 0 });
     c.total++;
     if (isDraft(s)) c.draft++; else c.live++;
     if (isBlocked(s)) c.blocked++;
+    if (isWaiting(s)) c.waiting++;
     if (has(s, '@smoke')) c.smoke++;
   }
   const live = scenarios.filter((s) => !isDraft(s));
   const blocked = scenarios.filter(isBlocked);
+  const waiting = scenarios.filter(isWaiting);
   // Reachable drafts are what turn 2 is contractually required to implement. A
   // @gap-suspected scenario still counts when it is reachable: implementing it produces a
   // failing test that proves the gap, which beats a document comparison. Only an unreachable
   // one is out of scope.
-  const implementable = scenarios.filter((s) => isDraft(s) && !isBlocked(s));
+  //
+  // A scenario waiting on a decision is out of scope too, and for a sharper reason: its
+  // assertion is the undecided part. Implementing it means inventing the expected value, which
+  // is the tautology this bank forbids everywhere else.
+  const implementable = scenarios.filter((s) => isDraft(s) && !isBlocked(s) && !isWaiting(s));
   return {
     total: scenarios.length,
     live: live.length,
     draft: scenarios.length - live.length,
     blocked: blocked.length,
+    waitingOnDecision: waiting.map((s) => ({
+      name: s.name,
+      file: s.file,
+      line: s.line,
+      decision: (pref(s, '@decision:') ?? '').slice('@decision:'.length) || null,
+    })),
     implementable: implementable.length,
     coverage: scenarios.length ? live.length / scenarios.length : 0,
     byCapability,
@@ -115,7 +131,7 @@ export function summarise(scenarios) {
       .map((s) => ({ name: s.name, until: (pref(s, '@quarantine-until:') ?? '').slice('@quarantine-until:'.length) || null })),
     gapSuspected: scenarios.filter((s) => has(s, '@gap-suspected')).map((s) => s.name),
     missingEvidence: scenarios.filter((s) => has(s, '@draft') && !s.hasEvidence).map((s) => `${s.file}:${s.line} ${s.name}`),
-    bySource: ['@from-crawl', '@from-bug', '@from-story', '@from-backend'].reduce((a, p) => {
+    bySource: ['@from-crawl', '@from-bug', '@from-story', '@from-copy', '@from-backend'].reduce((a, p) => {
       a[p] = scenarios.filter((s) => s.tags.some((t) => t === p || t.startsWith(p + ':'))).length;
       return a;
     }, {}),
@@ -165,13 +181,14 @@ function main() {
   const dir = argv.includes('--dir') ? argv[argv.indexOf('--dir') + 1] : 'features';
   const s = summarise(parseBank(dir));
   if (argv.includes('--json')) { console.log(JSON.stringify(s, null, 2)); return; }
-  console.log(`BANK: ${s.total} scenarios | ${s.live} live | ${s.draft} draft | ${s.blocked} blocked`);
+  const waitingNote = s.waitingOnDecision.length ? ` | ${s.waitingOnDecision.length} awaiting a decision` : '';
+  console.log(`BANK: ${s.total} scenarios | ${s.live} live | ${s.draft} draft | ${s.blocked} blocked${waitingNote}`);
   // Counts first. "COVERAGE: 0%" after a discovery turn reads as failure when it means
   // "banked 176, implemented none yet" -- the same discouragement the ranked queue used to cause.
   console.log(`COVERAGE: ${s.live} live / ${s.total} banked (${(s.coverage * 100).toFixed(0)}%)   implementable drafts: ${s.implementable}\n`);
   const caps = Object.entries(s.byCapability).sort((a, b) => a[1].live / a[1].total - b[1].live / b[1].total);
   for (const [cap, c] of caps) {
-    const flags = [c.blocked ? `${c.blocked} blocked` : null, c.smoke ? null : 'no smoke gate'].filter(Boolean).join(', ');
+    const flags = [c.blocked ? `${c.blocked} blocked` : null, c.waiting ? `${c.waiting} awaiting a decision` : null, c.smoke ? null : 'no smoke gate'].filter(Boolean).join(', ');
     console.log(`  ${cap.padEnd(22)} ${bar(c.live / c.total)} ${c.live}/${c.total}${flags ? '  (' + flags + ')' : ''}`);
   }
   const pairs = Object.entries(s.corroborationPairs);
@@ -195,6 +212,20 @@ function main() {
   if (s.knownDefects.length) {
     console.log('\nKNOWN DEFECTS');
     for (const d of s.knownDefects) console.log(`  ${d.change ?? 'UNLINKED'}  ${d.name}`);
+  }
+  if (s.waitingOnDecision.length) {
+    console.log('\nAWAITING A DECISION (out of turn 2\'s scope -- and out of nobody else\'s)');
+    for (const w of s.waitingOnDecision) {
+      console.log(`  ${w.decision ? w.decision.padEnd(6) : 'UNLINKED'} ${w.name}`);
+    }
+    console.log('  Each of these is parked on one question, not on the round. Everything not');
+    console.log('  listed here proceeds. Read the questions with:');
+    console.log('    node ${CLAUDE_PLUGIN_ROOT}/scripts/decisions.mjs');
+    const unlinked = s.waitingOnDecision.filter((w) => !w.decision);
+    if (unlinked.length) {
+      console.log(`  ${unlinked.length} carry @needs-decision with no @decision: id, so the question they wait on`);
+      console.log('  is written down nowhere. That is a scenario parked forever.');
+    }
   }
   if (s.gapSuspected.length) {
     console.log('\nSUSPECTED GAPS (unbuilt -- these are for turn 4, not turn 2)');

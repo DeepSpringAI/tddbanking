@@ -75,7 +75,7 @@ check('every command and agent has a description', missing.noDescription, []);
 check('every agent and skill declares a name', missing.noName, []);
 
 // The agents are the plugin's whole parallelism story; losing one to a rename is silent.
-check('the eight agents are all present', readdirSync('agents').filter((f) => f.endsWith('.md')).length, 8);
+check('the nine agents are all present', readdirSync('agents').filter((f) => f.endsWith('.md')).length, 9);
 check('the seven commands are all present', readdirSync('commands').filter((f) => f.endsWith('.md')).length, 7);
 
 // v0.4.0 added a fifth turn and the command files kept saying "Turn N of 4" for three releases,
@@ -98,6 +98,63 @@ check(
   TURNS.filter((n) => /loop ends here/i.test(frontmatter(`commands/${n}.md`).description)),
   ['develop'],
 );
+
+// Five capabilities the design implied and did not implement, each traced to a specific failure
+// on a real run. Each is guarded here because prose is what regressed last time: a turn count
+// drifted across four command files for three releases and proofreading did not catch it.
+const read = (p) => readFileSync(p, 'utf8');
+const turnCommands = TURNS.map((n) => `commands/${n}.md`);
+
+// 1. The open-decisions channel is one destination, not a convention each turn reinvents. If a
+//    turn stops naming it, that turn has quietly gone back to asking the user twice.
+check(
+  'every turn names the decisions ledger',
+  turnCommands.filter((p) => !/decisions\.mjs/.test(read(p))),
+  [],
+);
+check('status reports open decisions', /decisions\.mjs/.test(read('commands/status.md')), true);
+check('init creates the ledger from the template', /decisions\.md/.test(read('commands/init.md')), true);
+
+// 2. Blocking is per item. The tag pair follows the bare-tag rule, because a filter on
+//    `@needs-decision:D-6` matches nothing and the scenario runs anyway.
+check('the parked tag is bare, with the id in a companion',
+      /`@needs-decision` \+ `@decision:/.test(read('skills/tddbanking/SKILL.md')), true);
+check('the gate excludes scenarios parked on a decision',
+      /not @needs-decision/.test(read('commands/init.md')), true);
+
+// 3. Copy review is a dispatched pass, not a footnote. The failure it exists for is an inverted
+//    label, so the agent must say so -- "check the label exists" is what already happened.
+check('the copy reviewer is dispatched from turn 1', /copy-reviewer/.test(read('commands/discover.md')), true);
+check('the copy reviewer is about inverted labelling, not missing labelling',
+      /invert/i.test(read('agents/copy-reviewer.md')), true);
+
+// 4. status must say what CI runs. A suite nothing runs reassigns blame; this is the check that
+//    the report still asks the question.
+check('status reports CI wiring', /ci-wiring\.mjs/.test(read('commands/status.md')), true);
+check('init reports CI wiring at scaffold time', /ci-wiring\.mjs/.test(read('commands/init.md')), true);
+
+// 5. The scaffolded reset asserts, fails closed, and names where the fix goes. A template that
+//    warns instead of failing is the fire-and-forget hook with extra words.
+const reset = read('templates/steps/reset.ts');
+check('the reset template asserts on the response', /expect\(\s*response\.ok\(\)/.test(reset), true);
+check('the reset template checks the body, not only the status', /body\.reset|body\.tables/.test(reset), true);
+check('the reset template names where the fix goes', /needs adding to the delete list in/.test(reset), true);
+check('the reset template requires the schema to be enumerated', /information_schema\.tables/.test(reset), true);
+check('init copies the reset template', /templates\/steps\/reset\.ts/.test(read('commands/init.md')), true);
+// console.warn would leave the suite green, which is the exact defect: silent success.
+check('nothing in the reset template merely warns', /console\.(warn|log)/.test(reset), false);
+
+// Same failure class in the scaffolded harness rather than in a fixture: Playwright's idiomatic
+// `reuseExistingServer: !process.env.CI` makes a local run attach to whatever already holds the
+// port and report green for a build that is not under test. The idiom is what an editor restores
+// on the way past, so the divergence is asserted rather than trusted to a comment.
+const pwConfig = read('templates/playwright.config.ts');
+check('server reuse is opt-in, not on-by-default locally',
+      /reuseExistingServer:\s*process\.env\.BANK_REUSE_SERVER === '1'/.test(pwConfig), true);
+check('the scaffold does not ship the idiom it deliberately diverges from',
+      /reuseExistingServer:\s*!process\.env\.CI/.test(pwConfig), false);
+check('init tells the scaffolding agent not to restore the idiom',
+      /BANK_REUSE_SERVER/.test(read('commands/init.md')), true);
 
 console.log(failures ? `\n${failures} FAILED` : '\nall passed');
 process.exit(failures ? 1 : 0);

@@ -22,7 +22,25 @@ Run `openspec list --json`.
   `openspec init` here or to stop with `findings.md` as the record. Wait for the answer.
 - **`root.source` is `"nearest"`** → initialised. Continue.
 
-## 2. Gather everything that needs filing
+## 2. Read the decisions ledger first
+
+```
+node ${CLAUDE_PLUGIN_ROOT}/scripts/decisions.mjs
+```
+
+Two things in it change what you do here. An **answered** decision unparks whatever was waiting
+on it — those scenarios go back to turn 2, and any finding held behind it is now filable. An
+**open** one means a finding whose fix depends on an unmade choice.
+
+**File it anyway.** A proposal that names the open decision, states both options and says which
+tasks depend on the answer is a better artifact than a gap in `findings.md`, and it is what lets
+turn 5 develop everything that does not depend on the answer. What you must not do is hold the
+whole turn — filing every other finding costs nothing and is the entire contract of this turn.
+
+If a finding is genuinely unfilable until someone chooses, say which one, name the decision id,
+and file the rest.
+
+## 3. Gather everything that needs filing
 
 Three sources, and all three are in scope:
 
@@ -34,7 +52,12 @@ Three sources, and all three are in scope:
    individual-style congress with release-ready bookings" can unblock several at once and is
    usually a much smaller task than it looks.
 
-## 3. Group by cause, then propose
+`@needs-decision` scenarios are **not** a fourth source. They are waiting on a person, not on a
+change, and filing a proposal to answer a question just moves the question somewhere with more
+ceremony. Leave them parked, and list them in your report with their decision ids so the
+unanswered questions are visible next to the work that got filed.
+
+## 4. Group by cause, then propose
 
 Several failing scenarios caused by one broken behaviour are **one** change, not several.
 Group by cause, not by scenario.
@@ -54,7 +77,7 @@ Respect that skill's planning boundary: it produces artifacts and stops. Do not 
 
 Dispatch the groups in parallel — they are independent.
 
-## 4. Transfer the scenarios into delta specs
+## 5. Transfer the scenarios into delta specs
 
 **Get the format from OpenSpec, not from here.** Run
 `openspec instructions specs --change <name>`; it prints the authoritative artifact rules for
@@ -68,12 +91,14 @@ repeating because it fails silently: OpenSpec scenarios need **exactly four hash
 Run `openspec validate <change> --strict` on every change before reporting success. A change
 with zero recognised scenarios is rejected, which is your check that the reformat landed.
 
-## 5. Link both ways, then close the loop
+## 6. Link both ways, then close the loop
 
 Rewrite each `@defect-change:F-n` tag to the real change name, so the bank records what is
 being addressed and the proposal records how it will be proven.
 
-Report the changes created and which findings each covers.
+Report the changes created and which findings each covers, then the open decisions and what
+each parks. A turn that filed nine changes and left one question open is a turn that worked;
+reporting it as "blocked on a decision" is how the round gets stopped by an item.
 
 Then tell the user the next step is `/tddbanking:develop`, which takes each change to green
 test-first — and note what makes that step unusually well set up: every proposal carries a

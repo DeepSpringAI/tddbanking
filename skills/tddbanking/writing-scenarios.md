@@ -70,6 +70,49 @@ export class TransfersPage extends BasePage {
 A locator that appears in a step definition is a bug in the test suite. When the markup
 changes, exactly one file should need editing.
 
+## Assert the claim, not its presence
+
+Copy that makes a claim — "Extracted", "Sent", "3 results", "Read only" — is asserted by
+checking the claim against the thing it describes, never by checking that the string is on the
+screen.
+
+```gherkin
+# Wrong — passes while the label is a lie, which is the only case worth testing.
+Then the provenance label is visible
+```
+
+```gherkin
+# Right — the value was typed in, so the screen must not say it was extracted.
+Given a quotation whose registration fee was entered by hand
+Then the registration fee is not presented as extracted
+```
+
+The difference is not pedantry. A label is normally *present* and *wrong*, not missing: on a real
+run a screen labelled a hand-entered figure "Extracted", and every reader skimmed past it
+precisely because there was nothing absent to notice. `toBeVisible()` on that label is green in
+both worlds, so it guards nothing.
+
+The Page Object should expose the claim, not the element — `provenanceOf(field)` returning
+`'extracted' | 'entered'`, rather than a locator the step reads text out of. Then the step reads
+like the requirement, and the assertion cannot degrade into presence when the markup changes.
+
+## Ask where the journey stops
+
+Coverage that stops mid-journey reads as coverage of the journey.
+
+A value computed and rendered by nothing; a suite configured and run by nothing; a path verified
+up to a click. All three look like coverage from outside and are hollow at one point, and the
+third is the worst of them — because the half that exists is what makes the whole look covered.
+
+A real bank had a scenario rendering a doctor's email at phone width, and banked the consent page
+that email links to at desktop width only. The journey was verified up to the click and not after
+it. An absence of mobile scenarios would have been obvious; *one* mobile scenario that stops at
+the email is what made it invisible.
+
+So before banking a scenario, ask: **where does this journey stop, and what checks the other side
+of it?** No coverage report can ask that for you. It counts what exists, and has no notion of the
+step after the last one.
+
 ## Prefer user-facing locators
 
 `getByRole`, `getByLabel`, `getByText` over CSS and XPath. They break when the user

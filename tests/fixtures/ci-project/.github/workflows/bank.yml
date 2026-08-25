@@ -1,0 +1,16 @@
+name: test bank
+on:
+  pull_request:
+  schedule:
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+jobs:
+  bank:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Run bank
+        run: ${{ github.event_name == 'pull_request' && 'npm run test:smoke' || 'npm run test:bank' }}

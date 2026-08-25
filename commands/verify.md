@@ -42,6 +42,24 @@ Apply the verdicts:
 Never quarantine to make the run green, and never weaken an assertion to pass. Both convert a
 signal into permanent blindness.
 
+**A fourth thing happens, and it is not a fourth verdict.** Sometimes the honest answer is that
+the scenario and the application disagree because *nobody has decided which is right* — a rule a
+document states one way and the code implements another, where calling the scenario `stale`
+would be settling a product question by triage. The verdict stays `defect` (the bias is
+unchanged, and it is the safe direction), and additionally:
+
+- append the question to `decisions.md` with both options and what each costs;
+- tag the scenario `@needs-decision` and `@decision:D-n` so it stops gating while the question
+  is open;
+- keep triaging everything else.
+
+Read `node ${CLAUDE_PLUGIN_ROOT}/scripts/decisions.mjs` before writing a new entry — the same
+disagreement is often already recorded from turn 1, in which case add this scenario to what it
+blocks rather than opening a second entry for one question.
+
+**One decision does not hold the turn.** It parks the scenarios that depend on it. Every other
+failure still gets a verdict, and this turn's contract is unchanged.
+
 ## 3. Record findings with stable ids
 
 Write every `defect` verdict to `findings.md` with an id — `F-1`, `F-2`, … — carrying the
@@ -59,8 +77,18 @@ handle, so do not invent change names here.
 Report as a table — scenario, verdict, evidence path — then the counts, then
 `node ${CLAUDE_PLUGIN_ROOT}/scripts/bank-stats.mjs`.
 
+Then print `node ${CLAUDE_PLUGIN_ROOT}/scripts/decisions.mjs` if this turn opened or touched a
+decision, saying how many scenarios each one parks and how many failures were triaged regardless.
+
 Confirm the gate: `test:smoke` should now pass, because every proven defect is tagged out of
-it. If it does not, say which scenario is still failing the gate and why.
+it, as is anything parked on a decision. If it does not, say which scenario is still failing the
+gate and why.
+
+**Then say what else CI runs**: `node ${CLAUDE_PLUGIN_ROOT}/scripts/ci-wiring.mjs`. A green bank
+is a floor, not a ceiling, and this is the turn where somebody is most likely to read "the suite
+is green" as "the project is green". If the repository has a suite no workflow invokes, that is
+a finding of this turn: its failures are accumulating unobserved, and whoever eventually runs it
+will inherit all of them at once and read three days of breakage as three months of it.
 
 If everything passed, say so plainly and report the runtime — a green suite that has grown too
 slow to gate a pull request is its own finding.

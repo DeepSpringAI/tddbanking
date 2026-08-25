@@ -38,6 +38,19 @@ check('a scenario with one source contributes no pair', Object.values(s.corrobor
 // Novel = no document predicted it. These are what a docs-led process cannot reach.
 check('novel counts scenarios with no story source', s.novel, 5);
 
+// Blocking is per item, not per round. A decision parks the scenarios that depend on it and
+// nothing else, so the implementable count must still contain the unrelated draft -- otherwise
+// one open question stops a whole turn, which is what it used to do.
+const w = summarise(parseBank('tests/fixtures/decisions-bank'));
+check('scenarios awaiting a decision are counted', w.waitingOnDecision.length, 5);
+check('waiting is a different state from blocked', w.blocked, 0);
+check('one decision parks its own scenarios and no others', w.implementable, 1);
+check('the decision id travels with the scenario', w.waitingOnDecision[0].decision, 'D-2');
+// @needs-decision with no @decision: is a scenario parked on a question written down nowhere.
+check('a parked scenario with no id is visible as unlinked', w.waitingOnDecision.filter((x) => !x.decision).length, 1);
+check('waiting is reported per capability', w.byCapability.parked.waiting, 5);
+check('copy findings are counted as their own discovery source', w.bySource['@from-copy'], 4);
+
 // Regression: the CLI must actually print when invoked through a symlinked path.
 // Plugins install under a symlinked dir on some setups; comparing import.meta.url to
 // 'file://' + argv[1] silently fails there and the script produces no output at all.
