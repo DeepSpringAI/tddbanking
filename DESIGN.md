@@ -547,6 +547,35 @@ proceeding, because a partially-reset database must never present as ready. The 
 (`BANK_RESET_EXPECT=body`, `=status`) and are environment variables rather than edits, so
 choosing one appears in a diff someone reviewed and `grep` finds every project that chose it.
 
+## Why the scaffold diverges from Playwright's own default
+
+`templates/playwright.config.ts` sets `reuseExistingServer` from `BANK_REUSE_SERVER` rather than
+from `!process.env.CI`, which is Playwright's documented default and what its own scaffold
+writes. Diverging from an upstream idiom needs a reason, and this is it.
+
+The idiom means: locally, if anything is already listening on the port, attach to it instead of
+starting yours. For a bank that is a green that means nothing — the suite reports on a build that
+is not the one under test, and reports it in the direction that passes. The hollow thing is the
+*harness* rather than the assertion, which is this plugin's own subject matter, and it shipped to
+everyone who ran `init`.
+
+It is also the one trap this plugin was least entitled to ship, because it had already written
+the warning. `capability-implementer` and `change-developer` both carry an "Owning your ports"
+section about a sibling's leftover process silently stealing an agent's port. That is the same
+failure from the server's end; the config shipped the mechanism that makes it silent from the
+harness's end, and nothing connected the two.
+
+Default false makes a wrong answer an error: Playwright refuses to start on a taken port and says
+so. Reuse survives through two deliberate doors — `BANK_REUSE_SERVER=1`, and the `BANK_BASE_URL`
+path that already existed for pointing the bank at a running app. CI behaviour is unchanged,
+because `!process.env.CI` was already false there. This is the reset template's rule applied to
+the server rather than the fixture: fail-closed by default, downgrades as greppable environment
+variables rather than edits.
+
+The case for fixing the scaffold rather than documenting the workaround is not the incidents that
+prompted it. It is the project where nobody ever runs two worktrees, so the trap never fires —
+until it does, under load, in an environment where nobody nearby knows this failure mode exists.
+
 ## What was deliberately not built
 
 **A fourth triage verdict.** "Undecided" is a real outcome and it is not a verdict. Three verdicts

@@ -60,6 +60,19 @@ and ask rather than guessing a port.
    - In the config's `webServer` block, replace `command` and `url` with this repo's real dev
      command and port. Without that, CI has nothing to test against. If the bank should run
      against an already-deployed app instead, leave it and set `BANK_BASE_URL`.
+
+     **Leave `reuseExistingServer` alone.** The template deliberately sets it to
+     `process.env.BANK_REUSE_SERVER === '1'` rather than Playwright's idiomatic
+     `!process.env.CI`, and an idiom is exactly the kind of thing an editor restores on the way
+     past. Default-on-locally means the bank silently attaches to whatever already holds the
+     port and reports green for a build that is not the one under test. CI behaviour is
+     identical either way, so changing it back gains nothing and costs the trustworthiness of
+     every local run.
+
+     **On an existing config this is a thing to say, not a thing to change.** If the repo's own
+     `webServer` carries `reuseExistingServer: !process.env.CI`, tell the user plainly that
+     local bank runs cannot be trusted while it does, and offer to change it — the same way you
+     report every other edit. Do not silently rewrite a config the project owns.
 4a. **Scaffold the fixture reset, and make it assert.** Copy
    `${CLAUDE_PLUGIN_ROOT}/templates/steps/reset.ts` to `steps/reset.ts`. This is the most
    load-bearing part of a bank's isolation and it is the one place adopters reliably write a

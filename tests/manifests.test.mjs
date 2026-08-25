@@ -144,5 +144,17 @@ check('init copies the reset template', /templates\/steps\/reset\.ts/.test(read(
 // console.warn would leave the suite green, which is the exact defect: silent success.
 check('nothing in the reset template merely warns', /console\.(warn|log)/.test(reset), false);
 
+// Same failure class in the scaffolded harness rather than in a fixture: Playwright's idiomatic
+// `reuseExistingServer: !process.env.CI` makes a local run attach to whatever already holds the
+// port and report green for a build that is not under test. The idiom is what an editor restores
+// on the way past, so the divergence is asserted rather than trusted to a comment.
+const pwConfig = read('templates/playwright.config.ts');
+check('server reuse is opt-in, not on-by-default locally',
+      /reuseExistingServer:\s*process\.env\.BANK_REUSE_SERVER === '1'/.test(pwConfig), true);
+check('the scaffold does not ship the idiom it deliberately diverges from',
+      /reuseExistingServer:\s*!process\.env\.CI/.test(pwConfig), false);
+check('init tells the scaffolding agent not to restore the idiom',
+      /BANK_REUSE_SERVER/.test(read('commands/init.md')), true);
+
 console.log(failures ? `\n${failures} FAILED` : '\nall passed');
 process.exit(failures ? 1 : 0);

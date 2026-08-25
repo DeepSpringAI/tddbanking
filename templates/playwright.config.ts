@@ -37,7 +37,25 @@ export default defineConfig({
     : {
         command: 'npm run dev',
         url: 'http://localhost:3000',
-        reuseExistingServer: !process.env.CI,
+        // Playwright's own default here is `!process.env.CI`, and it is wrong for a bank.
+        // It means: locally, if anything is already listening on this port, attach to it
+        // silently instead of starting yours. The suite then reports on a build that is not
+        // the one under test, and it reports it in green.
+        //
+        // Twice in one day on one machine: a first local smoke run came back 18/18 green for
+        // a different worktree's build, caught only by someone noticing the port; and a second
+        // session could not afterwards demonstrate that its local runs had not attached to a
+        // foreign server, so numbers being treated as corroboration meant nothing.
+        //
+        // False makes a wrong answer an error: Playwright refuses to start on a taken port
+        // and says so, instead of quietly succeeding against something else. Reuse is still
+        // available, twice over -- BANK_REUSE_SERVER=1 to attach when present and start when
+        // not, or BANK_BASE_URL to point the bank at an already-running app and skip webServer
+        // entirely. Both are deliberate acts that show up in a shell history or a diff.
+        //
+        // Do not "fix" this back to the idiom. CI behaviour is identical either way; the only
+        // thing the idiom changes is whether a local green can be trusted.
+        reuseExistingServer: process.env.BANK_REUSE_SERVER === '1',
         timeout: 120_000,
       },
 });
