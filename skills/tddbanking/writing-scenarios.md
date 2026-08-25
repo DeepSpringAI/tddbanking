@@ -96,6 +96,23 @@ The Page Object should expose the claim, not the element — `provenanceOf(field
 `'extracted' | 'entered'`, rather than a locator the step reads text out of. Then the step reads
 like the requirement, and the assertion cannot degrade into presence when the markup changes.
 
+## Ask where the journey stops
+
+Coverage that stops mid-journey reads as coverage of the journey.
+
+A value computed and rendered by nothing; a suite configured and run by nothing; a path verified
+up to a click. All three look like coverage from outside and are hollow at one point, and the
+third is the worst of them — because the half that exists is what makes the whole look covered.
+
+A real bank had a scenario rendering a doctor's email at phone width, and banked the consent page
+that email links to at desktop width only. The journey was verified up to the click and not after
+it. An absence of mobile scenarios would have been obvious; *one* mobile scenario that stops at
+the email is what made it invisible.
+
+So before banking a scenario, ask: **where does this journey stop, and what checks the other side
+of it?** No coverage report can ask that for you. It counts what exists, and has no notion of the
+step after the last one.
+
 ## Prefer user-facing locators
 
 `getByRole`, `getByLabel`, `getByText` over CSS and XPath. They break when the user
