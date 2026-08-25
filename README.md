@@ -248,6 +248,52 @@ magnitude.
 
 ---
 
+## Where it fits — and where it does not
+
+**Do not develop through this loop.** Build features the way you already build them, with Claude
+Code directly. Running ordinary feature work through the five turns is measurably slower, and the
+reason is structural rather than a bug to be fixed: the parallel scouts, the evidence rule,
+reachability probing and one worktree per change all buy *coverage and confidence*. None of them
+buy feature velocity. Paying that cost on a feature you already know how to write is paying for
+something you do not need.
+
+What the loop is for is the work you would otherwise not do at all:
+
+- **Finding what nothing covers.** Turn 1 is the part nobody does by hand, because the whole
+  difficulty is that you cannot see what you have not thought of.
+- **Banking it and running it.** Turns 2 and 3 — including triage, which is where a red suite
+  usually stops being trusted.
+- **Fixing what it found.** Turn 5 develops *its own findings*, and this is the one place the
+  overhead pays for itself: each filed change arrives with its failing scenario already written.
+  The red half of red-green is done and agreed before development starts, which is the condition
+  that makes test-first cheap instead of expensive.
+
+So the practical division is **your features, your normal workflow; the bank's findings, the
+bank's turn 5.** Turn 5 is scoped to filed changes for exactly this reason. It is not a
+general-purpose development mode, and pointing it at your roadmap will disappoint you.
+
+### Run it on a schedule
+
+The bank should grow on a cadence rather than when somebody remembers. Coverage decays by
+default: every feature that ships without a scenario lowers it, so a bank that is only expanded
+by hand is one that quietly falls behind the app it covers.
+
+Schedule turns 1 to 3 — `discover`, `implement`, `verify` — at an interval matching how fast your
+app changes. Weekly is a reasonable starting point; nightly if you ship constantly. Leave turns 4
+and 5 to a person, because filing and fixing are where you want judgement and a scope
+confirmation, and turn 5 writes application code.
+
+Two things to get right before automating it:
+
+- **Point it at a disposable instance.** App-crawl writes to what it explores — during one trial
+  it cancelled records and sent invitation waves. Scheduled means unattended, which is precisely
+  when you do not want it touching production data or real outbound mail.
+- **Read the trend, not the run.** A scheduled run that banks nothing is a signal rather than a
+  failure: either the app stopped changing or discovery has saturated on the surface it can
+  reach. `/tddbanking:status` is read-only and safe to run between turns.
+
+---
+
 ## Install
 
 ```bash

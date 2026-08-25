@@ -370,3 +370,30 @@ costly instance was `init.md` telling every new adopter that the loop "ends at
 exactly the people who had just installed the plugin. That is the third time in this document
 that a hand-maintained count drifted; the rule by now is that if a number appears in two places,
 a test owns it.
+
+## Field note — the loop is not a development mode
+
+The first person to use this plugin alongside ordinary feature work reported that developing
+*through* the loop took considerably longer than working with Claude Code directly, and concluded
+the two should not be mixed. That is the right conclusion, and leaving people to discover it for
+themselves is a documentation failure rather than a surprise.
+
+Nothing in the five turns optimises for feature velocity, and this is not an oversight to be
+tuned away. Parallel scouts exist because one search angle misses things. The evidence rule
+exists because a scenario nobody can reproduce is worse than no scenario. Reachability probing
+exists because banking the unbuildable wastes a turn. One worktree per change exists because
+agents editing the same tree corrupt each other. Every one of those costs time and buys coverage
+or confidence — which is the correct trade when you are trying to find what you cannot see, and
+the wrong one when you already know what you are building.
+
+Turn 5's scoping follows from the same reasoning, and now has field support. It develops filed
+changes only, and each of those arrives with its failing scenario already written. That is the
+condition under which test-first is cheap: the red half is done and agreed before anyone starts.
+Point the same machinery at a feature with no scenario yet and you have paid for the apparatus
+without receiving the thing it was buying.
+
+The practical consequence, now in the README: build features normally, and reserve the loop for
+discovery, banking, triage, and developing what it finds. The second consequence is that the bank
+should grow on a schedule — coverage decays by default, because every feature that ships without
+a scenario lowers it, so a bank expanded only when someone remembers falls behind the app by
+construction.
